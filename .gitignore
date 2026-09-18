@@ -1,0 +1,81 @@
+# =========================
+# Frontend - Next.js
+# =========================
+
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Frontend build/cache
+frontend/build/
+
+# =========================
+# Backend - Java / Maven
+# =========================
+
+backend/target/
+
+# =========================
+# Environment files
+# =========================
+
+.env
+.env.*
+!.env.example
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# =========================
+# IDE
+# =========================
+
+.vscode/
+.idea/
+
+# =========================
+# AI / Development tools
+# =========================
+
+.claude/
+.windsurf/
+.agents/
+
+# =========================
+# Logs
+# =========================
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+
+# =========================
+# TypeScript
+# =========================
+
+*.tsbuildinfo
+next-env.d.ts
+
+# =========================
+# Vercel
+# =========================
+
+.vercel/
+
+# =========================
+# Prisma generated files
+# =========================
+
+**/src/generated/prisma/

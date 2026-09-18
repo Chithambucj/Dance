@@ -1,0 +1,380 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+// ── User / Account ──────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String
+  role            Role      @default(MEMBER)
+  firstName       String
+  lastName        String
+  phone           String?
+  gender          String?   // MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
+  profileImage    String?
+  address         String?
+  dateOfBirth     DateTime?
+
+  // Account status
+  status          String    @default("ACTIVE")    // ACTIVE, INACTIVE
+
+  // Membership status (tracks the overall membership lifecycle)
+  membershipStatus String   @default("REGISTERED") // REGISTERED, PAYMENT_PENDING, FREE_TRIAL, TRIAL_EXPIRED, ACTIVE, EXPIRED, SUSPENDED, CANCELLED
+
+  // Account type — how this member was onboarded
+  accountType     String    @default("ONLINE")    // ONLINE, OFFLINE
+
+  // Instructor profile fields
+  isInstructor    Boolean   @default(false)
+  bio             String?
+  experience      String?
+  specialities    String?   // e.g. "Hip Hop, Bollywood, Contemporary"
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  enrollments        Enrollment[]
+  payments           Payment[]
+  attendances        Attendance[]
+  memberships        Membership[]
+  razorpayOrders     RazorpayOrder[]
+  whatsAppReminders  WhatsAppReminder[] @relation("ReminderClient")
+  instructingBatches Batch[]            @relation("InstructorBatches")
+  freeTrial          FreeTrial?
+}
+
+// ── Membership Plan Catalog ─────────────────────────────────────────────────────
+
+model PricingPlan {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  price           Float
+  period          String   @default("/ month") // "one time", "/ month", "/ 3 months", "/ year"
+  billingPeriod   String   @default("MONTHLY") // TRIAL, MONTHLY, QUARTERLY, YEARLY, CUSTOM
+  durationDays    Int      @default(30)         // Membership validity in days
+  classesIncluded String?  @default("8 Classes / Month")
+  validity        String?  @default("30 days")
+  features        String   @default("[]")       // JSON stringified array of feature bullets
+  isFeatured      Boolean  @default(false)
+  isPublished     Boolean  @default(true)
+  displayOrder    Int      @default(0)
+  badge           String?  // e.g., "Most Popular", "Best Value"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  memberships     Membership[]
+  payments        Payment[]
+}
+
+// ── Membership (active subscription record) ────────────────────────────────────
+
+model Membership {
+  id               String    @id @default(uuid())
+  membershipNumber String    @unique   // e.g., MEM-2026-001
+
+  userId           String
+  user             User       @relation(fields: [userId], references: [id])
+
+  planId           String
+  plan             PricingPlan @relation(fields: [planId], references: [id])
+
+  startDate        DateTime
+  expiryDate       DateTime
+
+  // Status
+  status           String    @default("PAYMENT_PENDING")
+  // PAYMENT_PENDING, ACTIVE, PARTIALLY_PAID, EXPIRED, CANCELLED, SUSPENDED
+
+  // Fee tracking
+  totalFee         Float
+  amountPaid       Float     @default(0)
+  pendingAmount    Float     @default(0)
+
+  // Source
+  source           String    @default("ONLINE")  // ONLINE, OFFLINE
+
+  notes            String?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  payments         Payment[]
+}
+
+// ── Dance Class Style ──────────────────────────────────────────────────────────
+
+model ClassStyle {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  image       String?
+  level       String?  @default("All Levels") // Beginner, Intermediate, Advanced, All Levels
+  price       Float?   @default(1500)
+  duration    String?  @default("60 mins")
+  isPublished Boolean  @default(true)
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batches     Batch[]
+}
+
+// ── Batch ──────────────────────────────────────────────────────────────────────
+
+model Batch {
+  id            String    @id @default(uuid())
+  name          String
+  classStyleId  String
+  classStyle    ClassStyle @relation(fields: [classStyleId], references: [id])
+  instructorId  String?
+  instructor    User?      @relation("InstructorBatches", fields: [instructorId], references: [id])
+  schedule      String    // e.g., "Mon/Wed 6:00 PM"
+  capacity      Int       @default(20)
+  startDate     DateTime?
+  endDate       DateTime?
+  startTime     String?
+  endTime       String?
+  days          String?   // e.g., "Monday, Wednesday"
+  feeMonthly    Float?    @default(1500)
+  feeQuarterly  Float?    @default(4000)
+  feeYearly     Float?    @default(12000)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  enrollments   Enrollment[]
+  attendances   Attendance[]
+}
+
+// ── Enrollment ─────────────────────────────────────────────────────────────────
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id])
+  status    String   @default("ACTIVE") // ACTIVE, CANCELLED, COMPLETED
+  joinedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, batchId])
+}
+
+// ── Payment ────────────────────────────────────────────────────────────────────
+
+model Payment {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+
+  membershipId    String?
+  membership      Membership? @relation(fields: [membershipId], references: [id])
+
+  planId          String?
+  plan            PricingPlan? @relation(fields: [planId], references: [id])
+
+  amount          Float
+  status          String    @default("PENDING") // PENDING, COMPLETED, FAILED, CANCELLED, PARTIALLY_PAID
+
+  // Source tracking
+  source          String    @default("OFFLINE")  // ONLINE, OFFLINE
+  paymentMethod   String?   // CASH, UPI, CARD, BANK_TRANSFER, RAZORPAY, OTHER
+
+  description     String?
+  dueDate         DateTime?
+  paidAt          DateTime?
+  referenceNumber String?
+  notes           String?
+
+  // Razorpay fields (for ONLINE payments)
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+}
+
+// ── Razorpay Order (reconciliation) ───────────────────────────────────────────
+
+model RazorpayOrder {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+
+  planId     String
+  orderId    String   @unique   // Razorpay order_id
+  amount     Int                // amount in paise
+  currency   String   @default("INR")
+  status     String   @default("CREATED") // CREATED, PAID, FAILED, EXPIRED
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ── WhatsApp Reminder ──────────────────────────────────────────────────────────
+
+model WhatsAppReminder {
+  id            String   @id @default(uuid())
+
+  clientId      String
+  client        User     @relation("ReminderClient", fields: [clientId], references: [id])
+
+  phone         String
+  message       String
+  pendingAmount Float
+  membershipId  String?
+
+  // Delivery status
+  // For wa.me links: SENT is recorded when the owner clicks "Send"
+  // For official WhatsApp Business API: use webhook callbacks to update to DELIVERED/READ/FAILED
+  status        String   @default("SENT") // SENT, DELIVERED, READ, FAILED
+
+  sentAt        DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+// ── Attendance ─────────────────────────────────────────────────────────────────
+
+model Attendance {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id])
+  date      DateTime @default(now())
+  present   Boolean  @default(true)
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, batchId, date])
+}
+
+// ── Free Trial ─────────────────────────────────────────────────────────────────
+
+model FreeTrial {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+
+  program          String                  // e.g. "Hip Hop", "Bollywood"
+  preferredBatch   String?                 // e.g. "Morning 7 AM", "Evening 6 PM"
+  experienceLevel  String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+
+  trialStartDate   DateTime @default(now())
+  trialEndDate     DateTime                // typically +7 days
+
+  // Status
+  status           String   @default("ACTIVE") // ACTIVE, EXPIRED
+
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ── Content Models ─────────────────────────────────────────────────────────────
+
+model Announcement {
+  id             String    @id @default(uuid())
+  title          String
+  content        String
+  image          String?
+  publishDate    DateTime  @default(now())
+  expiryDate     DateTime?
+  isPublished    Boolean   @default(true)
+  targetAudience String    @default("ALL") // ALL, MEMBERS, PUBLIC
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+}
+
+model Event {
+  id                   String    @id @default(uuid())
+  title                String
+  description          String
+  image                String?
+  eventDate            DateTime
+  startTime            String?
+  endTime              String?
+  location             String?   @default("Main Studio Hall")
+  registrationRequired Boolean   @default(false)
+  registrationLink     String?
+  category             String    @default("Workshop") // Workshop, Showcase, Competition, Special Class, Event
+  isPublished          Boolean   @default(true)
+  displayOrder         Int       @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @default(now()) @updatedAt
+}
+
+model Media {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  filePath     String
+  publicUrl    String
+  mediaType    String   @default("IMAGE") // IMAGE, VIDEO
+  category     String   @default("General") // Classes, Events, Performances, Studio, Instructors, Workshops, General
+  isFeatured   Boolean  @default(false)
+  isPublished  Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model WebsiteSection {
+  id               String   @id @default(uuid())
+  sectionKey       String   @unique // "hero", "about", "why_choose_us", "stats", "contact", "footer"
+  title            String?
+  subtitle         String?
+  heading          String?
+  highlightedText  String?
+  description      String?
+  badgeText        String?
+  primaryBtnText   String?
+  primaryBtnLink   String?
+  secondaryBtnText String?
+  secondaryBtnLink String?
+  image            String?
+  data             String?  // JSON string for complex section items
+  isPublished      Boolean  @default(true)
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model StudioSettings {
+  id                 String   @id @default("default")
+  studioName         String   @default("Dance Studio")
+  tagline            String   @default("Move • Groove • Inspire")
+  description        String?  @default("Mumbai's most energetic dance studio. Hip Hop, Bollywood, Salsa & Contemporary classes for all ages.")
+  logo               String?  @default("")
+  favicon            String?  @default("/favicon.ico")
+  address            String   @default("123 Dance Ave, Mumbai, MH 400001")
+  phone              String   @default("+91-98765-43210")
+  email              String   @default("hello@dancestudio.com")
+  googleMapsUrl      String?  @default("https://maps.google.com")
+  instagram          String?  @default("https://instagram.com/dancestudio")
+  facebook           String?  @default("https://facebook.com/dancestudio")
+  youtube            String?  @default("https://youtube.com/dancestudio")
+  whatsapp           String?  @default("+919876543210")
+  businessHours      String   @default("Mon-Sat: 7:00 AM - 9:00 PM, Sun: 8:00 AM - 2:00 PM")
+  currency           String   @default("INR (₹)")
+  timezone           String   @default("Asia/Kolkata")
+  seoTitle           String   @default("Dance Studio | Move • Groove • Inspire")
+  seoDescription     String   @default("Join our Dance Studio for Hip Hop, Bollywood, Salsa & Contemporary classes. Expert instructors, flexible schedules, all age groups. Book a trial class today!")
+  socialPreviewImage String?  @default("/images/about-studio.jpg")
+  updatedAt          DateTime @default(now()) @updatedAt
+}
