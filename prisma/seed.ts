@@ -14,6 +14,13 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+    console.error("❌ Refusing to run seed script in production (NODE_ENV=production).");
+    console.error("   The seed script clears existing records before inserting demo data.");
+    console.error("   If you are certain you want to re-seed, set ALLOW_PRODUCTION_SEED=true.");
+    process.exit(1);
+  }
+
   console.log("🌱 Seeding studio database with complete studio data...");
 
   // ── Clean up existing data ──────────────────────────────
