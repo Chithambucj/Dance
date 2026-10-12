@@ -221,7 +221,7 @@ export default function FreeTrialPage() {
                     Experience Level <span className="text-red-400">*</span>
                   </label>
                   <input type="hidden" name="experienceLevel" value={experience} />
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {EXPERIENCE_LEVELS.map(({ value, label, desc }) => (
                       <button
                         key={value}

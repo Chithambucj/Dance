@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Access denied." }, { status: 403 });
     }
 
-    if (invoice.status !== "PENDING") {
+    if (invoice.status !== "PENDING" && invoice.status !== "OVERDUE") {
       return NextResponse.json({ error: "Invoice is not pending." }, { status: 400 });
     }
 
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest) {
           data: { membershipStatus: "ACTIVE" },
         });
         session.membershipStatus = "ACTIVE";
+        session.hasPaidMembership = true;
         await session.save();
       }
     }
@@ -125,6 +127,10 @@ export async function POST(request: NextRequest) {
       where: { orderId: razorpay_order_id },
       data: { status: "PAID" },
     });
+
+    // ── Revalidate cache for admin and member dashboards ─────────────────────
+    revalidatePath("/admin");
+    revalidatePath("/member");
 
     return NextResponse.json({
       success: true,

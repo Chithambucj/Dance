@@ -34,7 +34,7 @@ export default function PayInvoiceClient({
   const [errorMsg, setErrorMsg] = useState("");
 
   async function loadRazorpayScript(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       if (document.querySelector("script[src*='razorpay']")) {
         resolve();
         return;

@@ -50,12 +50,12 @@ export default function AddPaymentModal({ members }: AddPaymentModalProps) {
       </Button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="relative z-10 bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 p-8">
+          <div className="relative z-10 bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">

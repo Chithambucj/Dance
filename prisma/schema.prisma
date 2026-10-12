@@ -53,6 +53,7 @@ model User {
   whatsAppReminders  WhatsAppReminder[] @relation("ReminderClient")
   instructingBatches Batch[]            @relation("InstructorBatches")
   freeTrial          FreeTrial?
+  notifications      Notification[]
 }
 
 // ── Membership Plan Catalog ─────────────────────────────────────────────────────
@@ -377,4 +378,25 @@ model StudioSettings {
   seoDescription     String   @default("Join our Dance Studio for Hip Hop, Bollywood, Salsa & Contemporary classes. Expert instructors, flexible schedules, all age groups. Book a trial class today!")
   socialPreviewImage String?  @default("/images/about-studio.jpg")
   updatedAt          DateTime @default(now()) @updatedAt
+}
+
+// ── Notification ───────────────────────────────────────────────────────────────
+
+model Notification {
+  id              String   @id @default(uuid())
+  type            String   // NEW_FREE_TRIAL, PAYMENT_RECEIVED, OFFLINE_PAYMENT, PENDING_FEE, OVERDUE_FEE, RENEWAL
+  title           String
+  message         String
+  isRead          Boolean  @default(false)
+  
+  // Who receives this notification
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  // Optional relations to navigate to relevant entities
+  relatedUserId   String?
+  relatedPaymentId String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

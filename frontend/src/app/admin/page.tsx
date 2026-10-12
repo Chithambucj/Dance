@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import AddMemberModal from "@/components/admin/AddMemberModal";
-import AddOfflineMemberModal from "@/components/admin/AddOfflineMemberModal";
 import AddPaymentModal from "@/components/admin/AddPaymentModal";
 import EditPaymentModal from "@/components/admin/EditPaymentModal";
 import DeletePaymentButton from "@/components/admin/DeletePaymentButton";
@@ -22,6 +21,11 @@ import {
 } from "lucide-react";
 
 import AdminIncomeDashboard from "@/components/admin/dashboard/AdminIncomeDashboard";
+import WhatsAppRemindersView from "@/components/admin/reminders/WhatsAppRemindersView";
+import { generateSystemNotifications } from "@/actions/notifications";
+import { getOutstandingInvoices, getMemberCounts } from "@/actions/membersData";
+import { getExpiredFreeTrialWhere, IS_FREE_TRIAL_WHERE } from "@/lib/memberQueries";
+import { isValidPhone } from "@/lib/whatsappReminder";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function fmt(n: number) { return `₹${n.toLocaleString("en-IN")}`; }
@@ -60,9 +64,12 @@ export default async function AdminDashboardPage({
   // ══════════════════════════════════════════════════════════════════════════
   if (tab === "dashboard") {
     const now = new Date();
+    
+    // Generate system notifications (pending/overdue) — idempotent, no duplicates
+    generateSystemNotifications().catch(console.error);
 
-    const [completedPayments, pendingMembers] = await Promise.all([
-      // Income = completed payments (unchanged)
+    const [completedPayments, pendingInvoices, expiredTrialsCount] = await Promise.all([
+      // Income = completed payments
       prisma.payment.findMany({
         where: { status: "COMPLETED" },
         select: {
@@ -76,47 +83,15 @@ export default async function AdminDashboardPage({
         orderBy: { createdAt: "desc" },
       }),
 
-      // ✅ FIXED: Current pending = users whose most recent membership is still unpaid.
-      // Query users (not payment records) to get one entry per member with their
-      // current pending amount. Excludes members who have a newer ACTIVE paid membership.
-      prisma.user.findMany({
+      // Unpaid invoices = valid PENDING and OVERDUE invoices (shared with Members & Fees)
+      getOutstandingInvoices(),
+
+      // Expired Free Trials count awaiting follow-up
+      prisma.user.count({
         where: {
           role: "MEMBER",
-          memberships: {
-            some: {
-              status: { in: ["PAYMENT_PENDING", "PARTIALLY_PAID"] },
-              pendingAmount: { gt: 0 },
-            },
-          },
-          NOT: {
-            memberships: {
-              some: {
-                status: "ACTIVE",
-                pendingAmount: 0,
-              },
-            },
-          },
+          ...getExpiredFreeTrialWhere(now),
         },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          memberships: {
-            where: {
-              status: { in: ["PAYMENT_PENDING", "PARTIALLY_PAID"] },
-              pendingAmount: { gt: 0 },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            select: {
-              id: true,
-              pendingAmount: true,
-              expiryDate: true,
-              createdAt: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
       }),
     ]);
 
@@ -131,13 +106,15 @@ export default async function AdminDashboardPage({
             paymentMethod: p.paymentMethod ?? null,
             paidAt: p.paidAt ? p.paidAt.toISOString() : null,
           }))}
-          pendingPayments={pendingMembers.map((u) => ({
-            id: u.memberships[0]?.id ?? u.id,
-            amount: u.memberships[0]?.pendingAmount ?? 0,
-            createdAt: u.memberships[0]?.createdAt.toISOString() ?? new Date().toISOString(),
-            userName: `${u.firstName} ${u.lastName}`,
-            dueDate: u.memberships[0]?.expiryDate?.toISOString() ?? null,
+          pendingPayments={pendingInvoices.map((p) => ({
+            id: p.id,
+            userId: p.userId,
+            amount: p.amount,
+            createdAt: p.createdAt.toISOString(),
+            userName: p.user ? `${p.user.firstName} ${p.user.lastName}` : "Unknown Member",
+            dueDate: p.dueDate ? p.dueDate.toISOString() : null,
           }))}
+          expiredTrialsCount={expiredTrialsCount}
         />
       </div>
     );
@@ -147,24 +124,24 @@ export default async function AdminDashboardPage({
   // 2. MEMBERS & FEES TAB
   // ══════════════════════════════════════════════════════════════════════════
   if (tab === "members") {
-    const [allPlans, allBatches] = await Promise.all([
+    const [allPlans, allBatches, initialCounts] = await Promise.all([
       prisma.pricingPlan.findMany({ where: { isPublished: true, billingPeriod: { not: "TRIAL" } }, orderBy: { displayOrder: "asc" } }),
       prisma.batch.findMany({ where: { isActive: true }, include: { classStyle: true }, orderBy: { createdAt: "desc" } }),
+      getMemberCounts(),
     ]);
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">Members &amp; Fees</h1>
             <p className="text-gray-400 mt-1 text-sm font-medium">Every member, their plan, and current payment status — in one place.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <AddOfflineMemberModal plans={allPlans} batches={allBatches} />
-            <AddMemberModal />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <AddMemberModal plans={allPlans} batches={allBatches} />
           </div>
         </div>
 
-        <MemberManagementTable />
+        <MemberManagementTable initialCounts={initialCounts} />
       </div>
     );
   }
@@ -218,7 +195,7 @@ export default async function AdminDashboardPage({
         </div>
 
         {/* Period cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Today"      value={fmt(todayAgg._sum.amount ?? 0)} icon={Calendar}   color="text-indigo-600 bg-indigo-50"  sub={`${todayAgg._count.id} payments`} />
           <StatCard label="This Week"  value={fmt(weekAgg._sum.amount ?? 0)}  icon={TrendingUp} color="text-blue-600 bg-blue-50"     sub={`${weekAgg._count.id} payments`} />
           <StatCard label="This Month" value={fmt(monthAgg._sum.amount ?? 0)} icon={Banknote}   color="text-green-600 bg-green-50"   sub={`${monthAgg._count.id} payments`} />
@@ -255,8 +232,8 @@ export default async function AdminDashboardPage({
           <CardHeader className="border-b border-gray-50 pb-4">
             <CardTitle className="text-base font-bold text-gray-900">Recent Income</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <Table>
+          <CardContent className="p-0 overflow-x-auto">
+            <Table className="min-w-[600px]">
               <TableHeader className="bg-gray-50/50">
                 <TableRow className="border-b border-gray-50">
                   <TableHead className="font-semibold text-gray-400 px-5 py-3 text-xs">Member</TableHead>
@@ -288,155 +265,114 @@ export default async function AdminDashboardPage({
   // 5. WHATSAPP REMINDERS TAB
   // ══════════════════════════════════════════════════════════════════════════
   if (tab === "whatsapp") {
-    // Members with pending fees who could receive a reminder (from single source of truth: Payment table)
+    const now = new Date();
+
+    // 1. Members with pending fees (from single source of truth: Payment table where status in PENDING, OVERDUE and amount > 0, excluding free trials)
     const pendingPayments = await prisma.payment.findMany({
-      where: { status: "PENDING" },
+      where: {
+        status: { in: ["PENDING", "OVERDUE"] },
+        amount: { gt: 0 },
+        user: { role: "MEMBER", NOT: IS_FREE_TRIAL_WHERE },
+      },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
         plan: { select: { name: true } },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { dueDate: "asc" },
     });
 
-    // Group pending payments by member
+    // Group pending payments by member without double counting
     const pendingByUser = new Map<string, {
-      id: string;
       userId: string;
       firstName: string;
       lastName: string;
       phone: string | null;
       email: string;
-      planName: string;
-      pendingAmount: number;
+      totalPendingAmount: number;
+      earliestDueDate: string | null;
+      primaryPlanName: string;
+      hasValidPhone: boolean;
+      invoices: {
+        id: string;
+        amount: number;
+        status: string;
+        dueDate: string | null;
+        planName: string;
+        description?: string | null;
+      }[];
     }>();
 
     for (const p of pendingPayments) {
+      const invDueDate = p.dueDate ? p.dueDate.toISOString() : null;
+      const invPlanName = p.plan?.name || p.description || "Dance Class Membership";
+      const invoiceItem = {
+        id: p.id,
+        amount: p.amount,
+        status: p.status,
+        dueDate: invDueDate,
+        planName: invPlanName,
+        description: p.description,
+      };
+
       const existing = pendingByUser.get(p.userId);
       if (!existing) {
         pendingByUser.set(p.userId, {
-          id: p.id,
           userId: p.userId,
           firstName: p.user.firstName,
           lastName: p.user.lastName,
           phone: p.user.phone,
           email: p.user.email,
-          planName: p.plan?.name || "Standard Plan",
-          pendingAmount: p.amount,
+          totalPendingAmount: p.amount,
+          earliestDueDate: invDueDate,
+          primaryPlanName: invPlanName,
+          hasValidPhone: isValidPhone(p.user.phone),
+          invoices: [invoiceItem],
         });
       } else {
-        existing.pendingAmount += p.amount;
+        existing.totalPendingAmount += p.amount;
+        existing.invoices.push(invoiceItem);
+        if (p.dueDate && (!existing.earliestDueDate || new Date(p.dueDate) < new Date(existing.earliestDueDate))) {
+          existing.earliestDueDate = invDueDate;
+        }
       }
     }
 
     const pendingMembers = Array.from(pendingByUser.values());
-    const withPhone    = pendingMembers.filter((m) => !!m.phone);
-    const withoutPhone = pendingMembers.filter((m) => !m.phone);
+    const canReceiveCount = pendingMembers.filter((m) => m.hasValidPhone).length;
+    const noPhoneCount = pendingMembers.filter((m) => !m.hasValidPhone).length;
+    const totalPendingCount = pendingMembers.length;
+
+    // 2. Expired Free Trial members with ₹0 pending balance (distinct and never mixed with fee reminders)
+    // Uses the EXACT SAME shared backend query as getMemberCounts() and getPaginatedMembers()
+    const trialUsers = await prisma.user.findMany({
+      where: {
+        role: "MEMBER",
+        ...getExpiredFreeTrialWhere(now),
+      },
+      include: {
+        freeTrial: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const expiredTrialMembers = trialUsers.map((u) => ({
+      userId: u.id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      phone: u.phone,
+      email: u.email,
+      trialEndDate: u.freeTrial?.trialEndDate ? u.freeTrial.trialEndDate.toISOString() : null,
+      hasValidPhone: isValidPhone(u.phone),
+    }));
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">WhatsApp Reminders</h1>
-          <p className="text-gray-400 mt-1 text-sm font-medium">Send fee reminders to members with pending payments.</p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard label="Can Receive Reminder"    value={withPhone.length}    icon={MessageCircle} color="text-green-600 bg-green-50" />
-          <StatCard label="No Phone on File"        value={withoutPhone.length} icon={Phone}         color="text-gray-600 bg-gray-100" />
-          <StatCard label="Total Pending"           value={pendingMembers.length} icon={AlertCircle} color="text-orange-600 bg-orange-50" />
-        </div>
-
-        {/* How it works */}
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
-          <p className="text-sm font-bold text-indigo-700 mb-1 flex items-center gap-2">
-            <MessageCircle className="w-4 h-4" /> How WhatsApp Reminders Work
-          </p>
-          <p className="text-xs text-indigo-600 leading-relaxed">
-            Click "Send Reminder" to open WhatsApp with a pre-filled message for that member. The message includes their name, pending amount, and your studio name. No WhatsApp API needed — it opens directly on your phone or browser.
-          </p>
-        </div>
-
-        {/* Members with phone */}
-        {withPhone.length > 0 ? (
-          <Card className="rounded-2xl border-0 shadow-sm bg-white overflow-hidden">
-            <CardHeader className="border-b border-gray-50 pb-4">
-              <CardTitle className="text-base font-bold text-gray-900">Members Ready to Remind</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-gray-50/50">
-                  <TableRow className="border-b border-gray-50">
-                    <TableHead className="font-semibold text-gray-400 px-5 py-3 text-xs">Member</TableHead>
-                    <TableHead className="font-semibold text-gray-400 text-xs">Phone</TableHead>
-                    <TableHead className="font-semibold text-gray-400 text-xs">Plan</TableHead>
-                    <TableHead className="font-semibold text-gray-400 text-xs">Amount Due</TableHead>
-                    <TableHead className="font-semibold text-gray-400 text-xs text-right px-5">Send Reminder</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {withPhone.map((m) => (
-                    <TableRow key={m.id} className="border-b border-gray-50 hover:bg-gray-50/30">
-                      <TableCell className="px-5 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-700 font-black text-xs shrink-0">
-                            {initials(m.firstName, m.lastName)}
-                          </div>
-                          <p className="font-semibold text-gray-900 text-sm">{m.firstName} {m.lastName}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-700">{m.phone}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{m.planName}</TableCell>
-                      <TableCell className="font-bold text-orange-600">{fmt(m.pendingAmount)}</TableCell>
-                      <TableCell className="text-right px-5">
-                        <WhatsAppReminderModal
-                          clientId={m.userId}
-                          clientName={`${m.firstName} ${m.lastName}`}
-                          phone={m.phone!}
-                          pendingAmount={m.pendingAmount}
-                          membershipId={m.id}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="rounded-2xl border-0 shadow-sm bg-white">
-            <CardContent className="py-14 text-center">
-              <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
-              <p className="font-bold text-gray-700">No pending reminders!</p>
-              <p className="text-sm text-gray-400 mt-1">All members with phone numbers are up to date.</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Members without phone */}
-        {withoutPhone.length > 0 && (
-          <Card className="rounded-2xl border-0 shadow-sm bg-white overflow-hidden">
-            <CardHeader className="border-b border-gray-50 pb-3">
-              <CardTitle className="text-sm font-bold text-gray-500 flex items-center gap-2">
-                <Phone className="w-4 h-4" /> Members Without Phone — Can&apos;t Send WhatsApp
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableBody>
-                  {withoutPhone.map((m) => (
-                    <TableRow key={m.id} className="border-b border-gray-50">
-                      <TableCell className="px-5 py-3 font-semibold text-gray-700 text-sm">{m.firstName} {m.lastName}</TableCell>
-                      <TableCell className="text-xs text-gray-400">{m.email}</TableCell>
-                      <TableCell className="font-bold text-orange-600 text-sm">{fmt(m.pendingAmount)}</TableCell>
-                      <TableCell><span className="text-xs text-gray-400 italic">Add phone number to send reminder</span></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      <WhatsAppRemindersView
+        canReceiveCount={canReceiveCount}
+        noPhoneCount={noPhoneCount}
+        totalPendingCount={totalPendingCount}
+        pendingMembers={pendingMembers}
+        expiredTrialMembers={expiredTrialMembers}
+      />
     );
   }
 

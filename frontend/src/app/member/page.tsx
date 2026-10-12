@@ -1,18 +1,17 @@
 import { requireAuth } from "@/actions/auth";
 import { checkAndExpireCurrentUserTrial } from "@/actions/freeTrial";
+import { getMemberLifecycleState } from "@/lib/memberStatus";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import PaymentReceiptModal from "@/components/admin/PaymentReceiptModal";
 import PayInvoiceClient from "./PayInvoiceClient";
 import {
-  Calendar, CreditCard, Layers, Sparkles, Megaphone,
-  CheckCircle2, XCircle, Clock, ChevronRight, Image as ImageIcon,
-  User, Bell, Ticket, ExternalLink, Shield, RefreshCw, AlertCircle,
-  Star, ArrowRight, Timer
+  CreditCard, Sparkles, Megaphone,
+  User, Shield, AlertCircle,
+  ArrowRight, Timer
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 export default async function MemberDashboardPage({
@@ -26,11 +25,8 @@ export default async function MemberDashboardPage({
 
   await checkAndExpireCurrentUserTrial();
 
-  const freshMember = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { membershipStatus: true },
-  });
-  const currentStatus = freshMember?.membershipStatus ?? session.membershipStatus;
+  // Retrieve comprehensive member lifecycle state
+  const lifecycle = await getMemberLifecycleState(session.userId);
 
   const member = await prisma.user.findUnique({
     where: { id: session.userId },
@@ -41,30 +37,26 @@ export default async function MemberDashboardPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const membership = await prisma.membership.findFirst({
-    where: { userId: session.userId },
-    include: { plan: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const membership = lifecycle.latestMembership;
+  const freeTrial = lifecycle.freeTrial;
 
-  const freeTrial = await prisma.freeTrial.findUnique({
-    where: { userId: session.userId },
-  });
+  const isFreeTrial    = lifecycle.isFreeTrial;
+  const isTrialExpired = lifecycle.isTrialExpired;
+  const isExpired      = lifecycle.isExpired;
+  const isActive       = lifecycle.isActive;
+  const isPending      = membership?.status === "PAYMENT_PENDING";
+  const isPartial      = membership?.status === "PARTIALLY_PAID";
 
-  const isFreeTrial    = currentStatus === "FREE_TRIAL";
-  const isTrialExpired = currentStatus === "TRIAL_EXPIRED";
+  // Outstanding invoices — any Payment record still PENDING for this user
+  const pendingInvoices = allPayments.filter((p) => p.status === "PENDING");
+
+  // Check if there is a pending renewal invoice
+  const renewalInvoice = pendingInvoices.find(
+    (p) => p.membershipId === membership?.id || p.description?.toLowerCase().includes("renewal")
+  ) || (isExpired && pendingInvoices.length > 0 ? pendingInvoices[0] : null);
 
   // ── 1. Member Dashboard ──────────────────────────────────────────────────
   if (tab === "dashboard") {
-    const now = new Date();
-    const isExpired  = membership?.status === "EXPIRED" || (membership?.expiryDate && new Date(membership.expiryDate) < now);
-    const isActive   = membership?.status === "ACTIVE"  && !isExpired;
-    const isPending  = membership?.status === "PAYMENT_PENDING";
-    const isPartial  = membership?.status === "PARTIALLY_PAID";
-
-    // Outstanding invoices — any Payment record still PENDING for this user
-    const pendingInvoices = allPayments.filter((p) => p.status === "PENDING");
-
     return (
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -75,6 +67,50 @@ export default async function MemberDashboardPage({
             <p className="text-gray-500 mt-1 font-medium">Manage your membership and payments.</p>
           </div>
         </div>
+
+        {/* ── Existing Expired Paid Member Banner ────────────────────────── */}
+        {isExpired && !isTrialExpired && (
+          <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-pink-700 text-white shadow-xl shadow-red-600/15 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-7 h-7 text-white" />
+              </div>
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-wider">
+                  SUBSCRIPTION EXPIRED
+                </div>
+                <h2 className="text-2xl font-black text-white">Membership Expired</h2>
+                <p className="text-white/90 text-sm font-medium leading-relaxed max-w-xl">
+                  Your membership ended on {membership?.expiryDate ? new Date(membership.expiryDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "a previous date"}. Renew your membership to continue attending classes.
+                </p>
+                {renewalInvoice && (
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <span className="text-xs uppercase tracking-wider font-extrabold text-white/80">Renewal Fee:</span>
+                    <span className="text-lg font-black text-white">₹{renewalInvoice.amount.toLocaleString()}</span>
+                    <span className="px-2 py-0.5 text-[11px] font-black uppercase rounded bg-yellow-400 text-gray-900">PENDING</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+              <Link href="/plans">
+                <Button className="h-12 px-7 rounded-2xl bg-white text-red-600 font-black hover:bg-white/95 shadow-lg shadow-black/10 text-base">
+                  Renew Membership <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Button>
+              </Link>
+              {renewalInvoice && (
+                <PayInvoiceClient
+                  invoiceId={renewalInvoice.id}
+                  amount={renewalInvoice.amount}
+                  description={renewalInvoice.description || "Renewal Fee"}
+                  userName={`${member?.firstName ?? ""} ${member?.lastName ?? ""}`.trim()}
+                  userEmail={member?.email ?? ""}
+                  userPhone={member?.phone ?? ""}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Free Trial Banner */}
         {freeTrial && isFreeTrial && (
@@ -141,7 +177,7 @@ export default async function MemberDashboardPage({
             {pendingInvoices.map((inv) => (
               <div
                 key={inv.id}
-                className="p-5 rounded-2xl border-2 border-orange-100 bg-orange-50/60 flex items-center justify-between gap-4 shadow-sm"
+                className="p-5 rounded-2xl border-2 border-orange-100 bg-orange-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -221,8 +257,16 @@ export default async function MemberDashboardPage({
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isActive ? "bg-green-100 text-green-700" : isExpired ? "bg-red-100 text-red-700" : isPartial ? "bg-yellow-100 text-yellow-700" : "bg-orange-100 text-orange-700"}`}>
-                        {membership.status.replace("_", " ")}
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                        isActive
+                          ? "bg-green-100 text-green-700"
+                          : isExpired
+                          ? "bg-red-100 text-red-700 font-bold"
+                          : isPartial
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-orange-100 text-orange-700"
+                      }`}>
+                        {isExpired ? "SUBSCRIPTION EXPIRED" : membership.status.replace("_", " ")}
                       </span>
                     </div>
                     <p className="text-xl font-black text-gray-900">{membership.plan.name}</p>
@@ -236,16 +280,52 @@ export default async function MemberDashboardPage({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expires</p>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                        {isExpired ? "Ended" : "Expires"}
+                      </p>
+                      <p className={`text-sm font-bold mt-0.5 ${isExpired ? "text-red-600" : "text-gray-900"}`}>
                         {membership.expiryDate ? new Date(membership.expiryDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : "—"}
                       </p>
                     </div>
                   </div>
 
-                  <Link href="/plans" className="block pt-2">
-                    <Button variant="outline" className="w-full rounded-xl font-bold border-gray-200 text-gray-700">Change Plan</Button>
-                  </Link>
+                  {isExpired ? (
+                    <div className="pt-2 space-y-2">
+                      {renewalInvoice ? (
+                        <div className="space-y-2">
+                          <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex items-center justify-between text-xs">
+                            <span className="font-bold text-red-800">Renewal Fee Due:</span>
+                            <span className="font-black text-red-900">₹{renewalInvoice.amount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <PayInvoiceClient
+                              invoiceId={renewalInvoice.id}
+                              amount={renewalInvoice.amount}
+                              description={renewalInvoice.description || "Renewal Fee"}
+                              userName={`${member?.firstName ?? ""} ${member?.lastName ?? ""}`.trim()}
+                              userEmail={member?.email ?? ""}
+                              userPhone={member?.phone ?? ""}
+                            />
+                            <Link href="/plans" className="flex-1">
+                              <Button variant="outline" className="w-full h-9 rounded-xl font-bold border-gray-200 text-gray-700 text-xs hover:bg-gray-50">
+                                Choose a Plan
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <Link href="/plans" className="block">
+                          <Button className="w-full rounded-xl font-bold bg-primary text-white hover:bg-primary/90">
+                            Renew Membership
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    <Link href="/plans" className="block pt-2">
+                      <Button variant="outline" className="w-full rounded-xl font-bold border-gray-200 text-gray-700">Change Plan</Button>
+                    </Link>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -274,8 +354,8 @@ export default async function MemberDashboardPage({
           </div>
         </div>
         <Card className="rounded-3xl border-0 shadow-sm shadow-gray-100 bg-white overflow-hidden">
-          <CardContent className="p-0">
-            <Table>
+          <CardContent className="p-0 overflow-x-auto">
+            <Table className="min-w-[650px]">
               <TableHeader className="bg-gray-50/50">
                 <TableRow className="border-b border-gray-50 hover:bg-transparent">
                   <TableHead className="font-bold text-gray-400 px-6 py-4">Description</TableHead>

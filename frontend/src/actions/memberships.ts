@@ -5,6 +5,7 @@ import { requireAuth } from "@/actions/auth";
 import { getSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createAdminNotification } from "@/actions/notifications";
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
@@ -106,9 +107,10 @@ export async function activateMembership(membershipId: string) {
 
 // ── Create offline membership (admin) ─────────────────────────────────────────
 
-export async function createOfflineMembership(formData: FormData) {
+export async function createUnifiedMember(formData: FormData) {
   await requireAuth(["ADMIN"]);
 
+  const memberType      = (formData.get("memberType")      as string)?.trim() || "PAID_MEMBER"; // "FREE_TRIAL" or "PAID_MEMBER"
   const firstName       = (formData.get("firstName")       as string)?.trim();
   const lastName        = (formData.get("lastName")        as string)?.trim();
   const email           = (formData.get("email")           as string)?.trim().toLowerCase();
@@ -116,45 +118,47 @@ export async function createOfflineMembership(formData: FormData) {
   const gender          = (formData.get("gender")          as string)?.trim();
   const address         = (formData.get("address")         as string)?.trim();
   const dobStr          = (formData.get("dob")             as string)?.trim();
-  const planId          = (formData.get("planId")          as string)?.trim();
   const batchId         = (formData.get("batchId")         as string)?.trim();
+  const existingUserId  = (formData.get("existingUserId")  as string)?.trim();
+  
+  const loginEmail      = (formData.get("loginEmail")      as string)?.trim() || email;
+  const tempPassword    = (formData.get("tempPassword")    as string)?.trim() || "123456";
+
+  // Paid Member fields
+  const planId          = (formData.get("planId")          as string)?.trim();
   const startDateStr    = (formData.get("startDate")       as string)?.trim();
   const paymentMethod   = (formData.get("paymentMethod")   as string)?.trim() || "CASH";
   const paymentStatus   = (formData.get("paymentStatus")   as string)?.trim() || "PAID";
   const amountPaidStr   = (formData.get("amountPaid")      as string)?.trim();
   const referenceNumber = (formData.get("referenceNumber") as string)?.trim();
   const notes           = (formData.get("notes")           as string)?.trim();
-  const existingUserId  = (formData.get("existingUserId")  as string)?.trim();
 
-  if (!planId) return { success: false, error: "Please select a membership plan." };
   if (!email && !existingUserId) return { success: false, error: "Email is required." };
+  
+  if (memberType === "PAID_MEMBER" && !planId) {
+    return { success: false, error: "Please select a membership plan for paid members." };
+  }
 
   try {
-    const plan = await prisma.pricingPlan.findUnique({ where: { id: planId } });
-    if (!plan) return { success: false, error: "Selected plan not found." };
-
-    // Determine user: existing or new
     let userId: string;
+    const finalEmail = loginEmail || email;
 
     if (existingUserId) {
       userId = existingUserId;
     } else {
-      // Check if user already exists
-      const existing = await prisma.user.findUnique({ where: { email } });
+      const existing = await prisma.user.findUnique({ where: { email: finalEmail! } });
       if (existing) {
         userId = existing.id;
       } else {
         if (!firstName || !lastName) {
           return { success: false, error: "Name is required for new members." };
         }
-        // Create new offline user
         const bcrypt = await import("bcryptjs");
-        const tempPass = phone ? phone.slice(-4) : "1234";
-        const hashed = await bcrypt.hash(tempPass, 12);
+        const hashed = await bcrypt.hash(tempPassword, 12);
 
         const newUser = await prisma.user.create({
           data: {
-            email,
+            email: finalEmail!,
             password: hashed,
             role: "MEMBER",
             firstName,
@@ -164,7 +168,7 @@ export async function createOfflineMembership(formData: FormData) {
             address: address || null,
             dateOfBirth: dobStr ? new Date(dobStr) : null,
             status: "ACTIVE",
-            membershipStatus: "REGISTERED",
+            membershipStatus: memberType === "FREE_TRIAL" ? "FREE_TRIAL" : "ACTIVE",
             accountType: "OFFLINE",
           },
         });
@@ -172,73 +176,90 @@ export async function createOfflineMembership(formData: FormData) {
       }
     }
 
-    const startDate  = startDateStr ? new Date(startDateStr) : new Date();
-    const expiryDate = calcExpiryDate(startDate, plan.durationDays);
-    const totalFee   = plan.price;
-    const amountPaid = amountPaidStr ? parseFloat(amountPaidStr) : totalFee;
-    const pending    = Math.max(0, totalFee - amountPaid);
+    let membershipNumber = "";
+    let amountPaidForNotification = 0;
 
-    // Determine membership status
-    let memStatus = "ACTIVE";
-    if (paymentStatus === "PENDING") {
-      memStatus = "PAYMENT_PENDING";
-    } else if (pending > 0) {
-      memStatus = "PARTIALLY_PAID";
-    }
+    if (memberType === "PAID_MEMBER") {
+      const plan = await prisma.pricingPlan.findUnique({ where: { id: planId! } });
+      if (!plan) return { success: false, error: "Selected plan not found." };
 
-    // Create membership
-    const membership = await prisma.membership.create({
-      data: {
-        membershipNumber: generateMembershipNumber(),
-        userId,
-        planId,
-        startDate,
-        expiryDate,
-        status: memStatus,
-        totalFee,
-        amountPaid,
-        pendingAmount: pending,
-        source: "OFFLINE",
-        notes: notes || null,
-      },
-    });
+      const startDate  = startDateStr ? new Date(startDateStr) : new Date();
+      const expiryDate = calcExpiryDate(startDate, plan.durationDays);
+      const totalFee   = plan.price;
+      const amountPaid = amountPaidStr ? parseFloat(amountPaidStr) : totalFee;
+      amountPaidForNotification = amountPaid;
+      const pending    = Math.max(0, totalFee - amountPaid);
 
-    // Create payment record if amount was paid
-    if (amountPaid > 0) {
-      await prisma.payment.create({
+      let memStatus = "ACTIVE";
+      if (paymentStatus === "PENDING") {
+        memStatus = "PAYMENT_PENDING";
+      } else if (pending > 0) {
+        memStatus = "PARTIALLY_PAID";
+      }
+      
+      membershipNumber = generateMembershipNumber();
+
+      const membership = await prisma.membership.create({
         data: {
+          membershipNumber,
           userId,
-          membershipId: membership.id,
-          planId,
-          amount: amountPaid,
-          status: "COMPLETED",
+          planId: plan.id,
+          startDate,
+          expiryDate,
+          status: memStatus,
+          totalFee,
+          amountPaid,
+          pendingAmount: pending,
           source: "OFFLINE",
-          paymentMethod,
-          description: `${plan.name} — Offline Payment`,
-          paidAt: new Date(),
-          referenceNumber: referenceNumber || null,
           notes: notes || null,
         },
       });
-    }
 
-    // If there's a pending amount, create a pending payment record
-    if (pending > 0) {
-      await prisma.payment.create({
-        data: {
-          userId,
-          membershipId: membership.id,
-          planId,
-          amount: pending,
-          status: "PENDING",
-          source: "OFFLINE",
-          description: `${plan.name} — Balance Due`,
-          dueDate: expiryDate,
-        },
+      if (amountPaid > 0) {
+        await prisma.payment.create({
+          data: {
+            userId,
+            membershipId: membership.id,
+            planId: plan.id,
+            amount: amountPaid,
+            status: "COMPLETED",
+            source: "OFFLINE",
+            paymentMethod,
+            description: `${plan.name} — Offline Payment`,
+            paidAt: new Date(),
+            referenceNumber: referenceNumber || null,
+            notes: notes || null,
+          },
+        });
+      }
+
+      if (pending > 0) {
+        await prisma.payment.create({
+          data: {
+            userId,
+            membershipId: membership.id,
+            planId: plan.id,
+            amount: pending,
+            status: "PENDING",
+            source: "OFFLINE",
+            description: `${plan.name} — Balance Due`,
+            dueDate: expiryDate,
+          },
+        });
+      }
+      
+      await prisma.user.update({
+        where: { id: userId },
+        data: { membershipStatus: memStatus },
+      });
+    } else {
+      // FREE TRIAL
+      await prisma.user.update({
+        where: { id: userId },
+        data: { membershipStatus: "FREE_TRIAL" },
       });
     }
 
-    // Enroll in batch if provided
     if (batchId) {
       const alreadyEnrolled = await prisma.enrollment.findFirst({ where: { userId, batchId } });
       if (!alreadyEnrolled) {
@@ -246,16 +267,34 @@ export async function createOfflineMembership(formData: FormData) {
       }
     }
 
-    // Update user membership status
-    await prisma.user.update({
-      where: { id: userId },
-      data: { membershipStatus: memStatus },
-    });
-
     revalidatePath("/admin");
-    return { success: true, membershipNumber: membership.membershipNumber };
+
+    // Fire notifications (non-blocking)
+    if (amountPaidForNotification > 0) {
+      const member = await prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+      if (member) {
+        createAdminNotification({
+          type: "OFFLINE_PAYMENT",
+          title: "Offline Payment Recorded",
+          message: `₹${amountPaidForNotification.toLocaleString()} recorded for ${member.firstName} ${member.lastName}${paymentMethod ? ` via ${paymentMethod}` : ""}`,
+          relatedUserId: userId,
+        }).catch(console.error);
+      }
+    } else {
+      const member = await prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+      if (member) {
+        createAdminNotification({
+          type: "NEW_FREE_TRIAL",
+          title: "New Free Trial",
+          message: `${member.firstName} ${member.lastName} added as a Free Trial member`,
+          relatedUserId: userId,
+        }).catch(console.error);
+      }
+    }
+
+    return { success: true, membershipNumber };
   } catch (err) {
-    console.error("createOfflineMembership error:", err);
+    console.error("createUnifiedMember error:", err);
     return { success: false, error: "Failed to create membership. Please try again." };
   }
 }

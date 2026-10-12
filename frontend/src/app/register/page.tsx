@@ -63,10 +63,10 @@ export default function RegisterPage() {
           {/* Content */}
           <div>
             <div className="inline-flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-widest mb-5 bg-white/10 rounded-full px-4 py-1.5">
-              <Sparkles className="w-3 h-3" /> Free Trial
+              <Sparkles className="w-3 h-3" /> Dance Membership
             </div>
             <h2 className="text-4xl font-black leading-tight mb-4">
-              Start Your<br />Free Trial
+              Join Our<br />Dance Family
             </h2>
             <p className="text-white/75 text-base font-medium leading-relaxed max-w-xs">
               Join thousands of dancers who have found their rhythm. Expert instructors, flexible schedules, all styles.
@@ -110,15 +110,15 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Start Free Trial</h1>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Create Your Account</h1>
             <p className="text-gray-500 mt-1.5 font-medium text-sm">
-              Create your account and get 7 days of free access — no credit card required.
+              Create your member account and select a membership plan to start dancing.
             </p>
           </div>
 
           {success && (
             <div className="mb-6 p-4 bg-green-50 text-green-700 text-sm rounded-xl border border-green-100 font-medium flex items-center gap-2">
-              🎉 Welcome to DanceStudio! Your free trial has started. Redirecting to your dashboard…
+              🎉 Welcome to DanceStudio! Account created. Redirecting to choose your plan…
             </div>
           )}
 

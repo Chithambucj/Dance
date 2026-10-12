@@ -11,7 +11,11 @@ import {
   Music2,
 } from "lucide-react";
 
-export default function AdminSidebar() {
+interface Props {
+  onNavigate?: () => void;
+}
+
+export default function AdminSidebar({ onNavigate }: Props = {}) {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") || "dashboard";
 
@@ -49,6 +53,7 @@ export default function AdminSidebar() {
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               }`}
+              onClick={onNavigate}
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span>{item.name}</span>

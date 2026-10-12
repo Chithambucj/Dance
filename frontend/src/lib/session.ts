@@ -9,6 +9,7 @@ export interface SessionData {
   email: string;
   phone?: string;
   membershipStatus?: string; // REGISTERED, PAYMENT_PENDING, ACTIVE, EXPIRED, SUSPENDED
+  hasPaidMembership?: boolean;
   isLoggedIn: boolean;
 }
 

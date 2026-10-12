@@ -9,11 +9,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Find all users whose member type is PAID MEMBER
+    // Find all users whose member type is PAID MEMBER (strictly excluding free trial members)
     const paidMembers = await prisma.user.findMany({
       where: {
         role: "MEMBER",
         membershipStatus: { notIn: ["FREE_TRIAL", "TRIAL_EXPIRED"] },
+        freeTrial: null,
       },
       include: {
         memberships: {
@@ -28,7 +29,14 @@ export async function POST(request: NextRequest) {
 
     for (const member of paidMembers) {
       const activeMembership = member.memberships[0];
-      if (!activeMembership || !activeMembership.plan) continue;
+      if (
+        !activeMembership ||
+        !activeMembership.plan ||
+        activeMembership.plan.billingPeriod === "TRIAL" ||
+        activeMembership.plan.price <= 0
+      ) {
+        continue;
+      }
 
       // Check if it's expired
       if (new Date(activeMembership.expiryDate) < new Date()) {

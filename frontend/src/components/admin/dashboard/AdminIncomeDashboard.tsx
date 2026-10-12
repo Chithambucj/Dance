@@ -9,9 +9,12 @@ import {
   Calendar,
   Award,
   BarChart3,
-  CheckCircle2,
   ChevronDown,
+  Sparkles,
+  ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ResponsiveContainer,
@@ -41,6 +44,7 @@ export interface CompletedPayment {
 
 export interface PendingPayment {
   id: string;
+  userId?: string;
   amount: number;
   createdAt: string;
   userName: string;
@@ -50,6 +54,7 @@ export interface PendingPayment {
 interface AdminIncomeDashboardProps {
   completedPayments: CompletedPayment[];
   pendingPayments: PendingPayment[];
+  expiredTrialsCount?: number;
 }
 
 type CardId = "thisMonth" | "lastMonth" | "growth" | "pending";
@@ -297,6 +302,7 @@ function MiniPendingTable({
 export default function AdminIncomeDashboard({
   completedPayments,
   pendingPayments,
+  expiredTrialsCount,
 }: AdminIncomeDashboardProps) {
   const [timePeriod, setTimePeriod] = useState<"this_month" | "last_3_months" | "last_6_months" | "this_year">(
     "last_6_months"
@@ -370,6 +376,10 @@ export default function AdminIncomeDashboard({
     () => pendingPayments.reduce((s, p) => s + p.amount, 0),
     [pendingPayments]
   );
+
+  const uniquePendingMembersCount = useMemo(() => {
+    return new Set(pendingPayments.filter((p) => p.amount > 0).map((p) => p.userId || p.userName)).size;
+  }, [pendingPayments]);
 
   const totalCompletedAmount = useMemo(
     () => completedPayments.reduce((s, p) => s + p.amount, 0),
@@ -536,15 +546,30 @@ export default function AdminIncomeDashboard({
     return `Income ${dir} by ${abs}% compared with last month.`;
   }, [growthPercent, lastMonthIncome, thisMonthIncome]);
 
-  // Pending details — filter out zero-amount payments
-  const pendingTableRows = pendingPayments
-    .filter((p) => p.amount > 0)
-    .map((p) => ({
-      name: p.userName,
-      amount: p.amount,
-      dueDate: p.dueDate,
-      createdAt: p.createdAt,
-    }));
+  // Pending details — grouped by unique member with earliest due date and total amount
+  const pendingTableRows = useMemo(() => {
+    const memberMap = new Map<string, { name: string; amount: number; dueDate: string | null; createdAt: string }>();
+    for (const p of pendingPayments) {
+      if (p.amount <= 0) continue;
+      const key = p.userId || p.userName;
+      const existing = memberMap.get(key);
+      if (!existing) {
+        memberMap.set(key, {
+          name: p.userName,
+          amount: p.amount,
+          dueDate: p.dueDate,
+          createdAt: p.createdAt,
+        });
+      } else {
+        existing.amount += p.amount;
+        // Keep the earliest dueDate if multiple invoices exist
+        if (p.dueDate && (!existing.dueDate || new Date(p.dueDate) < new Date(existing.dueDate))) {
+          existing.dueDate = p.dueDate;
+        }
+      }
+    }
+    return Array.from(memberMap.values());
+  }, [pendingPayments]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -573,6 +598,32 @@ export default function AdminIncomeDashboard({
             })}
           </div>
         </div>
+
+        {/* Expired Free Trials Reminder Banner */}
+        {expiredTrialsCount !== undefined && expiredTrialsCount > 0 && (
+          <div className="bg-gradient-to-r from-blue-50/90 to-indigo-50/70 border border-blue-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-extrabold text-sm text-gray-900">
+                  {expiredTrialsCount} Expired Free {expiredTrialsCount === 1 ? "Trial" : "Trials"} Ready for Follow-up
+                </p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Invite them with a friendly WhatsApp message to explore regular dance classes.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin?tab=whatsapp"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors shrink-0"
+            >
+              <span>Send WhatsApp Invitations</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
 
         {/* 4 Interactive Expandable Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -767,7 +818,7 @@ export default function AdminIncomeDashboard({
               {fmt(totalPendingAmount)}
             </p>
             <p className="text-xs text-gray-400 font-semibold mt-1">
-              {pendingPayments.length} pending dues
+              {uniquePendingMembersCount} pending dues
             </p>
           </ExpandableCard>
 

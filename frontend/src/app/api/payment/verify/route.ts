@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -91,15 +92,25 @@ export async function POST(request: NextRequest) {
       data: { status: "PAID" },
     });
 
-    // Activate user membership status
+    // Activate user membership status and convert to PAID MEMBER
     await prisma.user.update({
       where: { id: session.userId },
       data: { membershipStatus: "ACTIVE" },
     });
 
+    // Close any previous trial record upon conversion to paid membership
+    await prisma.freeTrial.updateMany({
+      where: { userId: session.userId },
+      data: { status: "EXPIRED" },
+    });
+
     // Update session cookie with new status
     session.membershipStatus = "ACTIVE";
+    session.hasPaidMembership = true;
     await session.save();
+
+    revalidatePath("/admin");
+    revalidatePath("/member");
 
     return NextResponse.json({
       success: true,

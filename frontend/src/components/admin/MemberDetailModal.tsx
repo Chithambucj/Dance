@@ -345,7 +345,16 @@ export default function MemberDetailModal({
                               ₹{(isPending ? m.pendingAmount : (m.amountPaid || m.totalFee || 0)).toLocaleString()}
                             </p>
                             {isPending && pendingPayment && (
-                              <MarkPaidButton paymentId={pendingPayment.id} />
+                              <MarkPaidButton
+                                paymentId={pendingPayment.id}
+                                onSuccess={() => {
+                                  if (memberId) {
+                                    getFullMemberData(memberId).then((data) => {
+                                      if (data) setMember(data as any);
+                                    });
+                                  }
+                                }}
+                              />
                             )}
                           </div>
                         </div>
@@ -376,8 +385,17 @@ export default function MemberDetailModal({
                         </div>
                         <div className="flex flex-col items-end gap-2 text-right">
                           <p className="text-base font-black text-gray-900">₹{p.amount.toLocaleString()}</p>
-                          {p.status === "PENDING" && (
-                            <MarkPaidButton paymentId={p.id} />
+                          {(p.status === "PENDING" || p.status === "OVERDUE") && (
+                            <MarkPaidButton
+                              paymentId={p.id}
+                              onSuccess={() => {
+                                if (memberId) {
+                                  getFullMemberData(memberId).then((data) => {
+                                    if (data) setMember(data as any);
+                                  });
+                                }
+                              }}
+                            />
                           )}
                         </div>
                       </div>

@@ -14,8 +14,15 @@ import EditMemberModal from "@/components/admin/EditMemberModal";
 import DeleteMemberModal from "@/components/admin/DeleteMemberModal";
 import { toggleMemberStatus } from "@/actions/members";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-export default function MemberActionsMenu({ member }: { member: any }) {
+export default function MemberActionsMenu({
+  member,
+  className,
+}: {
+  member: any;
+  className?: string;
+}) {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const router = useRouter();
 
@@ -29,7 +36,10 @@ export default function MemberActionsMenu({ member }: { member: any }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="p-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
+          className={cn(
+            "p-2 text-gray-400 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center justify-center",
+            className
+          )}
           aria-label="More actions"
         >
           <MoreVertical className="w-5 h-5" />

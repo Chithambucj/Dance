@@ -17,10 +17,14 @@ async function main() {
   console.log("🌱 Seeding studio database with complete studio data...");
 
   // ── Clean up existing data ──────────────────────────────
+  // Order matters: delete children before parents (FK constraints)
+  await prisma.notification.deleteMany();
+  await prisma.whatsAppReminder.deleteMany();
   await prisma.freeTrial.deleteMany();
   await prisma.attendance.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.payment.deleteMany();
+  await prisma.membership.deleteMany();
   await prisma.announcement.deleteMany();
   await prisma.event.deleteMany();
   await prisma.media.deleteMany();
@@ -29,6 +33,7 @@ async function main() {
   await prisma.studioSettings.deleteMany();
   await prisma.batch.deleteMany();
   await prisma.classStyle.deleteMany();
+  await prisma.razorpayOrder.deleteMany();
   await prisma.user.deleteMany();
 
   // ── Passwords ────────────────────────────────────────────
@@ -161,6 +166,7 @@ async function main() {
         phone: "+91-98200-11003",
         address: "Worli, Mumbai",
         status: "ACTIVE",
+        membershipStatus: "PAYMENT_PENDING",
       },
     }),
     prisma.user.create({
@@ -209,6 +215,7 @@ async function main() {
         phone: "+91-98200-11007",
         address: "Bandra East, Mumbai",
         status: "ACTIVE",
+        membershipStatus: "PAYMENT_PENDING",
       },
     }),
     prisma.user.create({
@@ -233,15 +240,15 @@ async function main() {
         phone: "+91-98111-22334",
         address: "Andheri West, Mumbai",
         status: "ACTIVE",
-        membershipStatus: "FREE_TRIAL",
+        membershipStatus: "TRIAL_EXPIRED",
         freeTrial: {
           create: {
             program: "Hip Hop",
             preferredBatch: "Evening (5 PM – 7 PM)",
             experienceLevel: "BEGINNER",
-            trialStartDate: new Date(),
-            trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            status: "ACTIVE",
+            trialStartDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+            trialEndDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            status: "EXPIRED",
           },
         },
       },
@@ -265,6 +272,29 @@ async function main() {
             trialStartDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
             trialEndDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
             status: "EXPIRED",
+          },
+        },
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "activetrial@dance.com",
+        password: memberPass,
+        role: "MEMBER",
+        firstName: "Active",
+        lastName: "TrialUser",
+        phone: "+91-99999-00001",
+        address: "Bandra West, Mumbai",
+        status: "ACTIVE",
+        membershipStatus: "FREE_TRIAL",
+        freeTrial: {
+          create: {
+            program: "Hip Hop",
+            preferredBatch: "Morning (7 AM – 9 AM)",
+            experienceLevel: "BEGINNER",
+            trialStartDate: new Date(),
+            trialEndDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+            status: "ACTIVE",
           },
         },
       },
@@ -440,11 +470,11 @@ async function main() {
       { userId: members[0].id, amount: 1500, status: "COMPLETED", paymentMethod: "UPI", description: "Monthly Membership - Hip Hop", createdAt: daysAgo(5), referenceNumber: "UPI-8849102" },
       { userId: members[0].id, amount: 1500, status: "COMPLETED", paymentMethod: "Cash", description: "Monthly Membership - Salsa", createdAt: daysAgo(35), referenceNumber: "CASH-0021" },
       { userId: members[1].id, amount: 4000, status: "COMPLETED", paymentMethod: "Card", description: "Quarterly Plan - Bollywood", createdAt: daysAgo(10), referenceNumber: "CARD-99120" },
-      { userId: members[2].id, amount: 1500, status: "PENDING", paymentMethod: null, description: "Monthly Membership - Hip Hop", dueDate: daysAgo(-5), notes: "Pending student transfer" },
+      { userId: members[2].id, amount: 1500, status: "PENDING", paymentMethod: null, description: "Monthly Membership - Hip Hop", dueDate: daysAgo(5), notes: "Pending student transfer" },
       { userId: members[3].id, amount: 1800, status: "COMPLETED", paymentMethod: "UPI", description: "Monthly Membership - Salsa", createdAt: daysAgo(7), referenceNumber: "UPI-449102" },
       { userId: members[4].id, amount: 12000, status: "COMPLETED", paymentMethod: "Bank Transfer", description: "Annual Plan - All Access", createdAt: daysAgo(2), referenceNumber: "NEFT-77123" },
       { userId: members[5].id, amount: 1500, status: "COMPLETED", paymentMethod: "UPI", description: "Monthly Membership - Bollywood", createdAt: daysAgo(12), referenceNumber: "UPI-66129" },
-      { userId: members[6].id, amount: 1500, status: "PENDING", paymentMethod: null, description: "Monthly Membership - Hip Hop", dueDate: daysAgo(-2) },
+      { userId: members[6].id, amount: 1500, status: "PENDING", paymentMethod: null, description: "Monthly Membership - Hip Hop", dueDate: daysAgo(2) },
     ],
   });
 
@@ -530,6 +560,7 @@ async function main() {
         price: 1500,
         period: "/ month",
         billingPeriod: "MONTHLY",
+        durationDays: 30,
         classesIncluded: "8 Classes / Month",
         validity: "30 Days",
         features: JSON.stringify(["8 Classes per month", "Batch schedule flexibility", "Progress tracking in portal", "WhatsApp community support", "Access to practice hall"]),
@@ -544,6 +575,7 @@ async function main() {
         price: 4000,
         period: "/ 3 months",
         billingPeriod: "QUARTERLY",
+        durationDays: 90,
         classesIncluded: "24 Classes / 3 Months",
         validity: "90 Days",
         features: JSON.stringify(["24 Classes across 3 months", "Priority enrollment in batches", "1 make-up class per month", "Quarterly showcase qualification", "10% off guest workshops"]),
@@ -558,6 +590,7 @@ async function main() {
         price: 12000,
         period: "/ year",
         billingPeriod: "YEARLY",
+        durationDays: 365,
         classesIncluded: "Unlimited Classes",
         validity: "365 Days",
         features: JSON.stringify(["Unlimited classes across all styles", "Free entry to Annual Showcase", "2 free workshop passes", "Personal mentor review", "Exclusive studio merchandise kit"]),
@@ -567,6 +600,96 @@ async function main() {
       },
     ],
   });
+
+  const createdPlans = await prisma.pricingPlan.findMany();
+  const monthlyPlan = createdPlans.find((p) => p.billingPeriod === "MONTHLY") || createdPlans[0];
+  const quarterlyPlan = createdPlans.find((p) => p.billingPeriod === "QUARTERLY") || createdPlans[1];
+  const annualPlan = createdPlans.find((p) => p.billingPeriod === "YEARLY") || createdPlans[2];
+
+  // Create active memberships for paid members
+  if (monthlyPlan && quarterlyPlan && annualPlan) {
+    await prisma.membership.createMany({
+      data: [
+        {
+          membershipNumber: "MEM-2026-001",
+          userId: members[0].id, // John Smith
+          planId: monthlyPlan.id,
+          startDate: daysAgo(25),
+          expiryDate: daysAgo(-5), // Active, expires in 5 days
+          status: "ACTIVE",
+          totalFee: 1500,
+          amountPaid: 1500,
+          pendingAmount: 0,
+        },
+        {
+          membershipNumber: "MEM-2026-002",
+          userId: members[1].id, // Sarah Connor
+          planId: quarterlyPlan.id,
+          startDate: daysAgo(10),
+          expiryDate: daysAgo(-80), // Active, expires in 80 days
+          status: "ACTIVE",
+          totalFee: 4000,
+          amountPaid: 4000,
+          pendingAmount: 0,
+        },
+        {
+          membershipNumber: "MEM-2026-003",
+          userId: members[3].id, // Diana Prince
+          planId: monthlyPlan.id,
+          startDate: daysAgo(7),
+          expiryDate: daysAgo(-23), // Active, expires in 23 days
+          status: "ACTIVE",
+          totalFee: 1800,
+          amountPaid: 1800,
+          pendingAmount: 0,
+        },
+        {
+          membershipNumber: "MEM-2026-004",
+          userId: members[4].id, // Tony Stark
+          planId: annualPlan.id,
+          startDate: daysAgo(2),
+          expiryDate: daysAgo(-363), // Active, expires in ~1 year
+          status: "ACTIVE",
+          totalFee: 12000,
+          amountPaid: 12000,
+          pendingAmount: 0,
+        },
+        {
+          membershipNumber: "MEM-2026-005",
+          userId: members[5].id, // Neha Kapoor
+          planId: monthlyPlan.id,
+          startDate: daysAgo(12),
+          expiryDate: daysAgo(-18), // Active, expires in 18 days
+          status: "ACTIVE",
+          totalFee: 1500,
+          amountPaid: 1500,
+          pendingAmount: 0,
+        },
+        {
+          membershipNumber: "MEM-2026-006",
+          userId: members[2].id, // Bruce Wayne
+          planId: monthlyPlan.id,
+          startDate: daysAgo(35),
+          expiryDate: daysAgo(5), // Due date in the past -> Overdue
+          status: "PAYMENT_PENDING",
+          totalFee: 1500,
+          amountPaid: 0,
+          pendingAmount: 1500,
+        },
+        {
+          membershipNumber: "MEM-2026-007",
+          userId: members[6].id, // Rohit Verma
+          planId: monthlyPlan.id,
+          startDate: daysAgo(32),
+          expiryDate: daysAgo(2), // Due date in the past -> Overdue
+          status: "PAYMENT_PENDING",
+          totalFee: 1500,
+          amountPaid: 0,
+          pendingAmount: 1500,
+        },
+      ],
+    });
+  }
 
   // ── 11. Media / Gallery ───────────────────────────────────
   await prisma.media.createMany({

@@ -8,32 +8,41 @@ import { requireAuth } from "@/actions/auth";
 // For official WhatsApp Business API, replace with:
 //   POST https://graph.facebook.com/v18.0/{phone_number_id}/messages
 //   with Authorization: Bearer {WHATSAPP_ACCESS_TOKEN}
+import { formatWhatsAppPhone } from "@/lib/whatsappReminder";
 
 export async function recordWhatsAppReminder({
   clientId,
   phone,
-  pendingAmount,
+  pendingAmount = 0,
   membershipId,
-  studioName = "Dance Studio",
+  studioName = "StepUp Dance Studio",
+  customMessage,
+  type = "payment",
 }: {
   clientId: string;
   phone: string;
-  pendingAmount: number;
+  pendingAmount?: number;
   membershipId?: string;
   studioName?: string;
+  customMessage?: string;
+  type?: "payment" | "trial_followup";
 }) {
   await requireAuth(["ADMIN"]);
 
   const client = await prisma.user.findUnique({
     where: { id: clientId },
-    select: { firstName: true },
+    select: { firstName: true, lastName: true },
   });
-  const name = client?.firstName || "there";
+  const name = client?.firstName ? `${client.firstName} ${client.lastName || ""}`.trim() : "there";
 
-  const message = `Hi ${name}, this is a gentle reminder from ${studioName}. Your membership fee of ₹${pendingAmount.toLocaleString()} is currently pending. Please complete the payment at your earliest convenience. Thank you! 🙏`;
+  const message =
+    customMessage ||
+    (type === "trial_followup"
+      ? `Hi ${name}! 😊 Hope you enjoyed your free trial at ${studioName}! 💃 We'd love to have you join our regular dance classes. Feel free to contact us if you'd like to explore our membership plans. Hope to see you dancing with us again! 🎶`
+      : `Hello ${name},\n\nThis is a gentle payment reminder from ${studioName}.\n\nYour outstanding fee of ₹${(pendingAmount || 0).toLocaleString("en-IN")} is pending. Please complete the payment at your earliest convenience to continue your dance classes without interruption.\n\nThank you! 🙏`);
 
   try {
-    // Record the reminder in DB
+    // Record click-to-chat initiation in DB (clearly marked as click-to-chat, not automated delivery)
     await prisma.whatsAppReminder.create({
       data: {
         clientId,
@@ -41,14 +50,11 @@ export async function recordWhatsAppReminder({
         message,
         pendingAmount,
         membershipId: membershipId || null,
-        status: "SENT",
+        status: "CLICK_TO_CHAT",
       },
     });
 
-    // Clean phone number (remove spaces, dashes; ensure country code)
-    const cleaned = phone.replace(/[\s\-\(\)]/g, "");
-    const withCode = cleaned.startsWith("+") ? cleaned.slice(1) : cleaned.startsWith("91") ? cleaned : `91${cleaned}`;
-
+    const withCode = formatWhatsAppPhone(phone);
     const waUrl = `https://wa.me/${withCode}?text=${encodeURIComponent(message)}`;
 
     return { success: true, waUrl, message };

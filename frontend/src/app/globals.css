@@ -7,7 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-outfit), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-outfit), sans-serif;
+  --font-handwriting: var(--font-handwritten), cursive;
   --font-mono: var(--font-geist-mono);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
@@ -21,39 +23,362 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  /* Dance Studio Vibrant Moodboard Palette */
+  --color-dance-yellow: #FFD200;
+  --color-dance-yellow-light: #FFF5B8;
+  --color-dance-pink: #FF1E82;
+  --color-dance-pink-light: #FFE4F0;
+  --color-dance-purple: #7928CA;
+  --color-dance-purple-light: #F3E8FF;
+  --color-dance-purple-dark: #241442;
+  --color-dance-orange: #FF6600;
+  --color-dance-orange-light: #FFEDE0;
+  --color-dance-cyan: #00B4D8;
+  --color-dance-cyan-light: #E0F7FA;
+  --color-dance-dark: #121020;
+  --color-dance-cream: #FFFDF8;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  --background: #FFFDF9;
+  --foreground: #121020;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #121020;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #6c5ce7; /* StepUp Purple */
+  --popover-foreground: #121020;
+  --primary: #FF1E82; /* Energetic Hot Pink */
   --primary-foreground: #ffffff;
-  --secondary: #f8fafc;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f8fafc;
-  --accent-foreground: #0f172a;
+  --secondary: #FFF6CC; /* Warm Sunny Tint */
+  --secondary-foreground: #121020;
+  --muted: #F7F5F0;
+  --muted-foreground: #666373;
+  --accent: #F5E8FF; /* Playful Lilac Tint */
+  --accent-foreground: #121020;
   --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #6c5ce7;
-  --radius: 0.75rem;
+  --destructive-foreground: #ffffff;
+  --border: #EFECE6;
+  --input: #E4E0D7;
+  --ring: #FF1E82;
+  --radius: 1.25rem;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-family: var(--font-outfit), var(--font-geist-sans), sans-serif;
   }
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* ── Moodboard Custom Utility Styles ── */
+.font-display {
+  font-family: var(--font-outfit), sans-serif;
+}
+
+.font-handwriting {
+  font-family: var(--font-handwritten), cursive;
+}
+
+/* Playful offset tactile shadows */
+.sticker-shadow-dark {
+  box-shadow: 4px 5px 0px #121020;
+}
+
+.sticker-shadow-pink {
+  box-shadow: 4px 5px 0px #FF1E82;
+}
+
+.sticker-shadow-yellow {
+  box-shadow: 4px 5px 0px #FFD200;
+}
+
+.sticker-shadow-purple {
+  box-shadow: 4px 5px 0px #7928CA;
+}
+
+.glow-pink {
+  box-shadow: 0 12px 36px -6px rgba(255, 30, 130, 0.35);
+}
+
+.glow-purple {
+  box-shadow: 0 12px 36px -6px rgba(121, 40, 202, 0.35);
+}
+
+.glow-yellow {
+  box-shadow: 0 12px 36px -6px rgba(255, 210, 0, 0.35);
+}
+
+/* Groovy concentric wave background inspired by Dance Zone reference */
+.bg-groovy-waves {
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 30, 130, 0.08) 0%, transparent 50%),
+    repeating-radial-gradient(circle at 100% 0%, transparent 0, transparent 20px, rgba(255, 210, 0, 0.07) 21px, transparent 22px, transparent 40px);
+}
+
+/* Playful polka dots */
+.bg-dance-dots {
+  background-image: radial-gradient(rgba(18, 16, 32, 0.07) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+/* Arch frame clip and shape */
+.arch-top {
+  border-top-left-radius: 9999px;
+  border-top-right-radius: 9999px;
+}
+
+/* ── Entrance Animations & Parallax Floating Keyframes ── */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(var(--tw-rotate, 0deg));
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--tw-rotate, 0deg));
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(var(--tw-rotate, 0deg));
+  }
+  50% {
+    transform: translateY(8px) rotate(var(--tw-rotate, 0deg));
+  }
+}
+
+@keyframes float-badge {
+  0%, 100% {
+    transform: translateY(0px) rotate(var(--badge-rotate, 12deg));
+  }
+  50% {
+    transform: translateY(-6px) rotate(var(--badge-rotate, 12deg));
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.06);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 4.2s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 5s ease-in-out infinite;
+}
+
+.animate-float-badge {
+  animation: float-badge 3.6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 6s ease-in-out infinite;
+}
+
+/* ── Scroll & Load Reveal States ── */
+body.reveal-ready [data-reveal] {
+  opacity: 0;
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+body.reveal-ready [data-reveal="fade-up"] {
+  transform: translateY(28px);
+}
+
+body.reveal-ready [data-reveal="fade-down"] {
+  transform: translateY(-24px);
+}
+
+body.reveal-ready [data-reveal="fade-left"] {
+  transform: translateX(32px);
+}
+
+body.reveal-ready [data-reveal="fade-right"] {
+  transform: translateX(-32px);
+}
+
+body.reveal-ready [data-reveal="fade-scale"] {
+  transform: scale(0.93);
+}
+
+body.reveal-ready [data-reveal].is-revealed {
+  opacity: 1 !important;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+}
+
+/* Delay modifiers */
+.delay-75 { transition-delay: 75ms !important; }
+.delay-100 { transition-delay: 100ms !important; }
+.delay-150 { transition-delay: 150ms !important; }
+.delay-200 { transition-delay: 200ms !important; }
+.delay-250 { transition-delay: 250ms !important; }
+.delay-300 { transition-delay: 300ms !important; }
+.delay-350 { transition-delay: 350ms !important; }
+.delay-400 { transition-delay: 400ms !important; }
+.delay-500 { transition-delay: 500ms !important; }
+
+/* ── Interactive Card & Image Hover Effects ── */
+.card-hover-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.card-hover-lift:hover {
+  transform: translateY(-5px);
+}
+
+/* ── Hero Animated Image Stack 3D Layering ── */
+.hero-carousel-card {
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 450ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 400ms ease,
+              border-color 400ms ease;
+  will-change: transform, opacity;
+}
+
+.hero-stack-card-0 {
+  transform: translate3d(0px, -50%, 0px) rotate(-4.5deg) scale(1);
+}
+.hero-stack-card-1 {
+  transform: translate3d(110px, calc(-50% + 10px), 0px) rotate(4.5deg) scale(0.93);
+}
+.hero-stack-card-2 {
+  transform: translate3d(210px, calc(-50% + 18px), 0px) rotate(1.5deg) scale(0.86);
+}
+.hero-stack-card-3 {
+  transform: translate3d(300px, calc(-50% + 26px), 0px) rotate(-2.5deg) scale(0.79);
+}
+.hero-stack-card-hidden {
+  transform: translate3d(220px, -50%, 0px) scale(0.7);
+}
+
+@media (max-width: 1023px) {
+  .hero-stack-card-0 {
+    transform: translate3d(-15px, -50%, 0px) rotate(-3.5deg) scale(1);
+  }
+  .hero-stack-card-1 {
+    transform: translate3d(60px, calc(-50% + 8px), 0px) rotate(4deg) scale(0.92);
+  }
+  .hero-stack-card-2 {
+    transform: translate3d(130px, calc(-50% + 16px), 0px) rotate(1.5deg) scale(0.84);
+  }
+  .hero-stack-card-3 {
+    transform: translate3d(170px, calc(-50% + 22px), 0px) rotate(-2deg) scale(0.76);
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-stack-card-0 {
+    transform: translate3d(-16px, -50%, 0px) rotate(-3deg) scale(1);
+  }
+  .hero-stack-card-1 {
+    transform: translate3d(24px, calc(-50% + 8px), 0px) rotate(3.5deg) scale(0.92);
+  }
+  .hero-stack-card-2 {
+    transform: translate3d(54px, calc(-50% + 14px), 0px) rotate(1deg) scale(0.84);
+  }
+  .hero-stack-card-3 {
+    transform: translate3d(72px, calc(-50% + 20px), 0px) rotate(-1.5deg) scale(0.76);
+  }
+}
+
+/* ── StepUp Dance Studio Loading & Shimmer Animations (Gentle & Smooth) ── */
+@keyframes dance-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 0%,
+    #fdf2f8 25%,
+    #fefce8 50%,
+    #f3f4f6 75%
+  );
+  background-size: 200% 100%;
+  animation: dance-shimmer 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes dance-pulse-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(0.92);
+    opacity: 0.75;
+  }
+}
+
+@keyframes dance-bar-bounce {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(0.95);
+  }
+}
+
+.animate-dance-ring {
+  animation: dance-pulse-ring 4s ease-in-out infinite;
+}
+
+/* Slower and smoother spinner rotations (approx. 30% slower than default 1s) */
+.animate-spin {
+  animation: spin 1.35s linear infinite;
+}
+
+.animate-bar-1 { animation: dance-bar-bounce 1.4s ease-in-out infinite; }
+.animate-bar-2 { animation: dance-bar-bounce 1.5s ease-in-out infinite 0.2s; }
+.animate-bar-3 { animation: dance-bar-bounce 1.35s ease-in-out infinite 0.35s; }
+.animate-bar-4 { animation: dance-bar-bounce 1.45s ease-in-out infinite 0.5s; }
+.animate-bar-5 { animation: dance-bar-bounce 1.55s ease-in-out infinite 0.25s; }
+
+/* ── Reduced Motion Support ── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-float-slow,
+  .animate-float-reverse,
+  .animate-float-badge,
+  .animate-pulse-glow,
+  .skeleton-shimmer,
+  .animate-dance-ring,
+  .animate-bar-1,
+  .animate-bar-2,
+  .animate-bar-3,
+  .animate-bar-4,
+  .animate-bar-5 {
+    animation: none !important;
+  }
+  .hero-carousel-card {
+    transition: opacity 250ms ease !important;
+  }
+  body.reveal-ready [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

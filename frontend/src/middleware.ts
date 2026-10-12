@@ -9,6 +9,7 @@ interface SessionPayload {
   isLoggedIn: boolean;
   role: "ADMIN" | "MEMBER";
   membershipStatus?: string;
+  hasPaidMembership?: boolean;
 }
 
 async function getSessionFromRequest(request: NextRequest): Promise<SessionPayload | null> {
@@ -31,6 +32,13 @@ export async function middleware(request: NextRequest) {
   const isLoggedIn = session?.isLoggedIn === true;
   const role = session?.role;
   const membershipStatus = session?.membershipStatus;
+  const hasPaidMembership = session?.hasPaidMembership;
+
+  // Helper: determine if the member has portal access (paid active, paid expired, or active free trial)
+  // An existing paid member must NEVER be gated out of the member portal simply because their subscription expired.
+  const isPaidMember = hasPaidMembership === true || (hasPaidMembership === undefined && (membershipStatus === "ACTIVE" || membershipStatus === "PARTIALLY_PAID" || membershipStatus === "EXPIRED"));
+  const isActiveTrial = membershipStatus === "FREE_TRIAL";
+  const hasPortalAccess = isPaidMember || isActiveTrial;
 
   // ── Protect /admin routes ──────────────────────────────────────────────────
   if (pathname.startsWith("/admin")) {
@@ -45,7 +53,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Protect /member routes ─────────────────────────────────────────────────
-  // Allow ACTIVE, PARTIALLY_PAID, EXPIRED, FREE_TRIAL, and TRIAL_EXPIRED members
+  // Allowed:
+  // - Previous paid membership + active -> /member
+  // - Previous paid membership + expired -> /member
+  // - Free trial active -> /member
+  //
+  // Redirected to /plans:
+  // - New member (no previous paid membership, no active trial) -> /plans
+  // - Expired free trial member who never paid -> /plans?reason=trial_expired
   if (pathname.startsWith("/member")) {
     if (!isLoggedIn) {
       const loginUrl = new URL("/login", request.url);
@@ -55,13 +70,11 @@ export async function middleware(request: NextRequest) {
     if (role !== "MEMBER") {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
-    // Gate: Members with expired trials or expired memberships are forced to upgrade
-    const allowedStatuses = ["ACTIVE", "PARTIALLY_PAID", "FREE_TRIAL"];
-    if (!allowedStatuses.includes(membershipStatus ?? "")) {
-      const redirectUrl = new URL("/plans", request.url);
-      if (membershipStatus === "TRIAL_EXPIRED") redirectUrl.searchParams.set("reason", "trial_expired");
-      if (membershipStatus === "EXPIRED") redirectUrl.searchParams.set("reason", "expired");
-      return NextResponse.redirect(redirectUrl);
+
+    // Only gate to /plans if explicitly confirmed to have NO paid membership and NO active trial.
+    // If hasPaidMembership is undefined/unknown, allow request to reach MemberLayout for live DB verification.
+    if (hasPaidMembership === false && !isActiveTrial) {
+      return NextResponse.redirect(new URL("/plans", request.url));
     }
   }
 
@@ -91,42 +104,28 @@ export async function middleware(request: NextRequest) {
   // ── Redirect away from /register if already logged in ─────────────────────
   if (pathname === "/register" && isLoggedIn) {
     if (role === "ADMIN") return NextResponse.redirect(new URL("/admin", request.url));
-    const memberPortalStatuses = ["ACTIVE", "PARTIALLY_PAID", "FREE_TRIAL"];
-    if (memberPortalStatuses.includes(membershipStatus ?? "")) {
-      return NextResponse.redirect(new URL("/member", request.url));
+    if (hasPortalAccess) {
+      return NextResponse.redirect(new URL("/member/dashboard", request.url));
     }
-    const plansUrl = new URL("/plans", request.url);
-    if (membershipStatus === "TRIAL_EXPIRED") plansUrl.searchParams.set("reason", "trial_expired");
-    return NextResponse.redirect(plansUrl);
+    return NextResponse.redirect(new URL("/plans", request.url));
   }
 
   // ── Redirect away from /free-trial if already logged in ───────────────────
   if (pathname === "/free-trial" && isLoggedIn) {
     if (role === "ADMIN") return NextResponse.redirect(new URL("/admin", request.url));
-    const trialStatuses = ["FREE_TRIAL", "ACTIVE", "PARTIALLY_PAID"];
-    if (trialStatuses.includes(membershipStatus ?? "")) {
-      return NextResponse.redirect(new URL("/member", request.url));
+    if (hasPortalAccess) {
+      return NextResponse.redirect(new URL("/member/dashboard", request.url));
     }
-    const plansUrl = new URL("/plans", request.url);
-    if (membershipStatus === "TRIAL_EXPIRED") plansUrl.searchParams.set("reason", "trial_expired");
-    return NextResponse.redirect(plansUrl);
+    return NextResponse.redirect(new URL("/plans", request.url));
   }
 
-  // ── Redirect logged-in users away from /login ──────────────────────────────
-  if (pathname === "/login" && isLoggedIn) {
-    if (role === "ADMIN") return NextResponse.redirect(new URL("/admin", request.url));
-    const memberPortalStatuses = ["ACTIVE", "PARTIALLY_PAID", "FREE_TRIAL"];
-    if (memberPortalStatuses.includes(membershipStatus ?? "")) {
-      return NextResponse.redirect(new URL("/member", request.url));
-    }
-    const plansUrl = new URL("/plans", request.url);
-    if (membershipStatus === "TRIAL_EXPIRED") plansUrl.searchParams.set("reason", "trial_expired");
-    return NextResponse.redirect(plansUrl);
-  }
+  // NOTE: /login is intentionally NOT redirected here.
+  // The Login button and visiting /login must always display the login form.
+  // Routing to /member/dashboard or /plans happens only after submitting credentials.
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/member/:path*", "/plans/:path*", "/payment/:path*", "/login", "/register", "/free-trial"],
+  matcher: ["/admin/:path*", "/member/:path*", "/plans/:path*", "/payment/:path*", "/register", "/free-trial"],
 };

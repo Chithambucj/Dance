@@ -2,20 +2,24 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { getMemberLifecycleState } from "@/lib/memberStatus";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-async function setUserSession(user: {
-  id: string;
-  role: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string | null;
-  membershipStatus: string;
-}) {
+async function setUserSession(
+  user: {
+    id: string;
+    role: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string | null;
+    membershipStatus: string;
+  },
+  hasPaidMembership?: boolean
+) {
   const session = await getSession();
   session.userId = user.id;
   session.role = user.role as "ADMIN" | "MEMBER";
@@ -24,6 +28,9 @@ async function setUserSession(user: {
   session.email = user.email;
   session.phone = user.phone ?? undefined;
   session.membershipStatus = user.membershipStatus;
+  if (hasPaidMembership !== undefined) {
+    session.hasPaidMembership = hasPaidMembership;
+  }
   session.isLoggedIn = true;
   await session.save();
 }
@@ -58,50 +65,33 @@ export async function registerAction(formData: FormData) {
     }
 
     const hashed = await bcrypt.hash(password, 12);
-    const trialStart = new Date();
-    const trialEnd   = new Date(trialStart);
-    trialEnd.setDate(trialEnd.getDate() + 7);
 
-    // Create user + FreeTrial in a single transaction
-    const user = await prisma.$transaction(async (tx) => {
-      const u = await tx.user.create({
-        data: {
-          email,
-          password: hashed,
-          role: "MEMBER",
-          firstName,
-          lastName,
-          phone: phone || null,
-          gender: gender || null,
-          address: address || null,
-          dateOfBirth: dobStr ? new Date(dobStr) : null,
-          status: "ACTIVE",
-          membershipStatus: "FREE_TRIAL",
-          accountType: "ONLINE",
-        },
-      });
-      await tx.freeTrial.create({
-        data: {
-          userId: u.id,
-          program: "General",
-          preferredBatch: null,
-          experienceLevel: "BEGINNER",
-          trialStartDate: trialStart,
-          trialEndDate: trialEnd,
-          status: "ACTIVE",
-        },
-      });
-      return u;
+    // Create user as a REGISTERED new member (no paid plan yet)
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashed,
+        role: "MEMBER",
+        firstName,
+        lastName,
+        phone: phone || null,
+        gender: gender || null,
+        address: address || null,
+        dateOfBirth: dobStr ? new Date(dobStr) : null,
+        status: "ACTIVE",
+        membershipStatus: "REGISTERED",
+        accountType: "ONLINE",
+      },
     });
 
-    await setUserSession(user);
+    await setUserSession(user, false);
   } catch (err) {
     console.error("registerAction error:", err);
     return { success: false, error: "Registration failed. Please try again." };
   }
 
-  // Redirect after session save — must be outside try/catch
-  redirect("/member");
+  // Redirect new member to choose a plan
+  redirect("/plans");
 }
 
 
@@ -138,7 +128,16 @@ export async function loginAction(formData: FormData) {
       return { success: false, error: "Invalid email or password." };
     }
 
-    await setUserSession(user);
+    // Check member lifecycle state using actual database records
+    const memberState = await getMemberLifecycleState(user.id);
+
+    await setUserSession(
+      {
+        ...user,
+        membershipStatus: memberState.userStatus,
+      },
+      memberState.hasPaidMembership
+    );
   } catch (error) {
     console.error("Login Error:", error);
     return { success: false, error: "An unexpected error occurred. Please try again." };
@@ -149,17 +148,29 @@ export async function loginAction(formData: FormData) {
   if (user?.role === "ADMIN") {
     redirect("/admin");
   }
-  // MEMBER: gate by membership status
-  const ms = user?.membershipStatus;
-  if (
-    ms === "ACTIVE" ||
-    ms === "PARTIALLY_PAID" ||
-    ms === "FREE_TRIAL" ||
-    ms === "TRIAL_EXPIRED" ||
-    ms === "EXPIRED"
-  ) {
-    redirect("/member");
+
+  if (!user) {
+    redirect("/login");
   }
+
+  // Determine destination using member's actual membership/payment history
+  const { state } = await getMemberLifecycleState(user.id);
+
+  // Existing active or expired paid member, or active free trial -> Member Dashboard
+  if (
+    state === "EXISTING_ACTIVE_MEMBER" ||
+    state === "EXISTING_EXPIRED_MEMBER" ||
+    state === "ACTIVE_FREE_TRIAL_MEMBER"
+  ) {
+    redirect("/member/dashboard");
+  }
+
+  // Free trial expired without paying -> Plans page
+  if (state === "EXPIRED_FREE_TRIAL_MEMBER") {
+    redirect("/plans");
+  }
+
+  // Brand-new member who has never had a paid membership -> Plans onboarding
   redirect("/plans");
 }
 
@@ -182,7 +193,7 @@ export async function requireAuth(allowedRoles?: Array<"ADMIN" | "MEMBER">) {
 
   if (allowedRoles && !allowedRoles.includes(session.role)) {
     if (session.role === "ADMIN") redirect("/admin");
-    if (session.role === "MEMBER") redirect("/member");
+    if (session.role === "MEMBER") redirect("/member/dashboard");
     redirect("/login");
   }
 
@@ -190,8 +201,8 @@ export async function requireAuth(allowedRoles?: Array<"ADMIN" | "MEMBER">) {
 }
 
 // ── requireActiveMember ───────────────────────────────────────────────────────
-// Use this in member portal pages to ensure only ACTIVE/PARTIALLY_PAID members
-// can access full portal features
+// Use this in member portal pages to ensure only paid members (active or expired)
+// and active free trial members can access full portal features
 
 export async function requireActiveMember() {
   const session = await getSession();
@@ -202,12 +213,12 @@ export async function requireActiveMember() {
   if (session.role !== "MEMBER") {
     redirect("/admin");
   }
-  const status = session.membershipStatus;
-  // Allow free trial, expired trial, and standard active/partial/expired members
-  const allowed = ["ACTIVE", "PARTIALLY_PAID", "EXPIRED", "FREE_TRIAL", "TRIAL_EXPIRED"];
-  if (!allowed.includes(status ?? "")) {
+  
+  const { hasPaidMembership, isFreeTrial } = await getMemberLifecycleState(session.userId);
+  if (!hasPaidMembership && !isFreeTrial) {
     redirect("/plans");
   }
 
   return session;
 }
+

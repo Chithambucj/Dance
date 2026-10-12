@@ -16,7 +16,11 @@ import {
   Shield,
 } from "lucide-react";
 
-export default function MemberSidebar() {
+interface Props {
+  onNavigate?: () => void;
+}
+
+export default function MemberSidebar({ onNavigate }: Props = {}) {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") || "dashboard";
 
@@ -50,6 +54,7 @@ export default function MemberSidebar() {
                   ? "bg-primary text-white shadow-lg shadow-primary/20" 
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               }`}
+              onClick={onNavigate}
             >
               <Icon className="w-5 h-5" />
               {item.name}

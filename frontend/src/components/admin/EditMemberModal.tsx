@@ -100,7 +100,7 @@ export default function EditMemberModal({
                     <h3 className="font-bold text-gray-900">Personal Details</h3>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>First Name <span className="text-red-500">*</span></Label>
                       <Input name="firstName" defaultValue={member.firstName} required className="rounded-xl bg-gray-50/50" />
@@ -111,7 +111,7 @@ export default function EditMemberModal({
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Email <span className="text-red-500">*</span></Label>
                       <Input type="email" name="email" defaultValue={member.email} required className="rounded-xl bg-gray-50/50" />
@@ -122,7 +122,7 @@ export default function EditMemberModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Date of Birth</Label>
                       <Input type="date" name="dob" defaultValue={dobValue} className="rounded-xl bg-gray-50/50" />
@@ -138,7 +138,7 @@ export default function EditMemberModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Emergency Contact</Label>
                       <Input name="emergencyContact" defaultValue={member.emergencyContact || ""} placeholder="Name & Phone" className="rounded-xl bg-gray-50/50" />
@@ -176,7 +176,7 @@ export default function EditMemberModal({
                     <h3 className="font-bold text-gray-900">Add New Payment/Fee (Optional)</h3>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label>Total Fee (₹)</Label>
                       <Input type="number" name="totalFee" min="0" placeholder="0" className="rounded-xl bg-gray-50/50" />

@@ -6,74 +6,17 @@ import { requireAuth } from "@/actions/auth";
 // DUAL-SOURCE FILTER CONDITIONS HAVE BEEN REMOVED
 // All members are now strictly required to have a Membership record.
 
-/** Member has at least one unpaid Payment (invoice) record */
-const HAS_PENDING_INVOICE = {
-  payments: {
-    some: {
-      status: { in: ["PENDING", "OVERDUE"] as string[] },
-      amount: { gt: 0 },
-    },
-  },
-};
-
-/** Member has successfully purchased a paid plan (completed payment OR has a membership) */
-const IS_PAID_MEMBER_WHERE = {
-  OR: [
-    { memberships: { some: {} } },
-    { payments: { some: { status: "COMPLETED", amount: { gt: 0 } } } }
-  ]
-};
-
-/** Member is on a free trial (has not successfully purchased a paid plan) */
-const IS_FREE_TRIAL_WHERE = {
-  NOT: IS_PAID_MEMBER_WHERE
-};
-
-const HAS_ACTIVE_PAID_MEMBERSHIP = {
-  memberships: {
-    some: {
-      status: "ACTIVE" as string,
-      pendingAmount: 0,
-    },
-  },
-};
-
-const ALL_PENDING_WHERE = HAS_PENDING_INVOICE;
-
-/**
- * CURRENT_PENDING: Member's current fee is unpaid.
- *   - Has an unpaid Membership (or standalone PENDING payment)
- *   - AND does NOT have a newer active fully-paid Membership
- */
-const CURRENT_PENDING_WHERE = {
-  AND: [
-    ALL_PENDING_WHERE,
-    { NOT: HAS_ACTIVE_PAID_MEMBERSHIP },
-  ],
-};
-
-/**
- * OLD_PENDING: Member has paid their current fee (active Membership) but has
- * an older unpaid fee lingering.
- *   - Has an active paid Membership
- *   - AND ALSO has a pending Membership (old period)
- */
-const OLD_PENDING_WHERE = {
-  AND: [
-    HAS_ACTIVE_PAID_MEMBERSHIP,
-    ALL_PENDING_WHERE,
-  ],
-};
-
-/**
- * PAID: Current fee is paid AND no outstanding fees of any kind.
- */
-const PAID_MEMBERSHIP_WHERE = {
-  AND: [
-    HAS_ACTIVE_PAID_MEMBERSHIP,
-    { NOT: ALL_PENDING_WHERE },
-  ],
-};
+import {
+  HAS_PENDING_INVOICE,
+  IS_PAID_MEMBER_WHERE,
+  IS_FREE_TRIAL_WHERE,
+  getExpiredFreeTrialWhere,
+  HAS_ACTIVE_PAID_MEMBERSHIP,
+  ALL_PENDING_WHERE,
+  CURRENT_PENDING_WHERE,
+  OLD_PENDING_WHERE,
+  PAID_MEMBERSHIP_WHERE,
+} from "@/lib/memberQueries";
 
 // ── getPaginatedMembers ────────────────────────────────────────────────────────
 
@@ -91,12 +34,15 @@ export async function getPaginatedMembers(params: {
 
   const { page, limit, search, status, batch, payment, memberType, sortBy } = params;
   const skip = (page - 1) * limit;
+  const now = new Date();
 
   const whereConditions: any[] = [{ role: "MEMBER" }];
 
   if (memberType && memberType !== "ALL") {
-    if (memberType === "FREE_TRIAL" || memberType === "TRIAL_EXPIRED") {
+    if (memberType === "FREE_TRIAL") {
       whereConditions.push(IS_FREE_TRIAL_WHERE);
+    } else if (memberType === "TRIAL_EXPIRED") {
+      whereConditions.push(getExpiredFreeTrialWhere(now));
     } else if (memberType === "PAID") {
       whereConditions.push(IS_PAID_MEMBER_WHERE);
     } else if (memberType === "FEES_PENDING") {
@@ -162,7 +108,10 @@ export async function getPaginatedMembers(params: {
           },
         },
       },
-      payments: { orderBy: { createdAt: "desc" } },
+      payments: {
+        include: { plan: true },
+        orderBy: { createdAt: "desc" },
+      },
       attendances: {
         include: { batch: { include: { classStyle: true } } },
         orderBy: { date: "desc" },
@@ -198,6 +147,7 @@ export async function getActiveBatchesList() {
 
 export async function getMemberCounts() {
   await requireAuth(["ADMIN"]);
+  const now = new Date();
 
   const [
     total,
@@ -211,7 +161,7 @@ export async function getMemberCounts() {
     // Total members
     prisma.user.count({ where: { role: "MEMBER" } }),
 
-    // Free trial members = everyone who is NOT a PAID MEMBER
+    // Free trial members = active or expired trial who have NOT converted to PAID MEMBER
     prisma.user.count({
       where: {
         role: "MEMBER",
@@ -219,15 +169,15 @@ export async function getMemberCounts() {
       },
     }),
 
-    // Trial expired (Currently not used strictly, but fallback to same)
+    // Trial expired = trial period actually expired and who have NOT converted to PAID MEMBER
     prisma.user.count({
       where: {
         role: "MEMBER",
-        ...IS_FREE_TRIAL_WHERE,
+        ...getExpiredFreeTrialWhere(now),
       },
     }),
 
-    // PAID = any member who has successfully paid for a plan (has membership or completed payment)
+    // PAID = any member who has a paid plan (membership, payment > 0, or active paid status)
     prisma.user.count({
       where: {
         role: "MEMBER",
@@ -251,11 +201,15 @@ export async function getMemberCounts() {
       },
     }),
 
-    // OUTSTANDING FEES AMOUNT - Invoice pending sum
+    // OUTSTANDING FEES AMOUNT - Invoice pending sum for valid members (excluding free trials)
     prisma.payment.aggregate({
       where: {
         status: { in: ["PENDING", "OVERDUE"] },
         amount: { gt: 0 },
+        user: {
+          role: "MEMBER",
+          NOT: IS_FREE_TRIAL_WHERE,
+        },
       },
       _sum: { amount: true },
     }),
@@ -273,4 +227,42 @@ export async function getMemberCounts() {
     outstandingAmount,
   };
 }
+
+// ── getOutstandingInvoices (Shared backend source for Dashboard & Members) ──────
+
+export async function getOutstandingInvoices() {
+  await requireAuth(["ADMIN"]);
+
+  return prisma.payment.findMany({
+    where: {
+      status: { in: ["PENDING", "OVERDUE"] },
+      amount: { gt: 0 },
+      user: {
+        role: "MEMBER",
+        NOT: IS_FREE_TRIAL_WHERE,
+      },
+    },
+    select: {
+      id: true,
+      userId: true,
+      amount: true,
+      status: true,
+      createdAt: true,
+      dueDate: true,
+      description: true,
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          membershipStatus: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export const getPendingInvoices = getOutstandingInvoices;
 

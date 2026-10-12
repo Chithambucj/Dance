@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
+import { createAdminNotification } from "./notifications";
 
 const TRIAL_DURATION_DAYS = 7;
 
@@ -91,13 +92,21 @@ export async function registerFreeTrialAction(formData: FormData) {
     session.membershipStatus = "FREE_TRIAL";
     session.isLoggedIn       = true;
     await session.save();
+
+    // Fire notification in background (not blocking transaction)
+    createAdminNotification({
+      type: "NEW_FREE_TRIAL",
+      title: "New Free Trial",
+      message: `${user.firstName} ${user.lastName} joined as a Free Trial member`,
+      relatedUserId: user.id,
+    }).catch(console.error);
   } catch (err) {
     console.error("registerFreeTrialAction error:", err);
     return { success: false, error: "Registration failed. Please try again." };
   }
 
   // Redirect must be outside try/catch
-  redirect("/member");
+  redirect("/member/dashboard");
 }
 
 // ── Check & Expire Trials (call on member page load) ──────────────────────────
@@ -182,7 +191,11 @@ export async function expireOverdueTrials() {
       data: { status: "EXPIRED" },
     }),
     prisma.user.updateMany({
-      where: { id: { in: userIds } },
+      where: {
+        id: { in: userIds },
+        memberships: { none: {} },
+        payments: { none: { status: "COMPLETED", amount: { gt: 0 } } },
+      },
       data: { membershipStatus: "TRIAL_EXPIRED" },
     }),
   ]);

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/actions/auth";
 import { revalidatePath } from "next/cache";
+import { createAdminNotification } from "@/actions/notifications";
 
 export async function createPaymentRecord(formData: FormData) {
   await requireAuth(["ADMIN"]);
@@ -37,6 +38,19 @@ export async function createPaymentRecord(formData: FormData) {
         notes: notes || null,
       },
     });
+
+    // Fire notification for offline payment (admin manually recording)
+    const member = await prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+    if (member) {
+      const isOffline = !method || ["CASH", "UPI", "CARD", "BANK_TRANSFER", "OTHER"].includes(method.toUpperCase());
+      createAdminNotification({
+        type: isOffline ? "OFFLINE_PAYMENT" : "PAYMENT_RECEIVED",
+        title: isOffline ? "Offline Payment Recorded" : "Payment Received",
+        message: `₹${amount.toLocaleString()} ${isOffline ? "recorded" : "received"} from ${member.firstName} ${member.lastName}${method ? ` via ${method}` : ""}`,
+        relatedUserId: userId,
+      }).catch(console.error);
+    }
+
     revalidatePath("/admin");
     revalidatePath("/member");
     return { success: true };
@@ -62,22 +76,36 @@ export async function markPaymentCompleted(id: string) {
 
     if (payment.membershipId) {
       const remaining = await prisma.payment.aggregate({
-        where: { membershipId: payment.membershipId, status: "PENDING" },
+        where: { membershipId: payment.membershipId, status: { in: ["PENDING", "OVERDUE"] }, amount: { gt: 0 } },
         _sum: { amount: true },
       });
       const pendingSum = remaining._sum.amount ?? 0;
+
+      let newExpiryDate = payment.membership?.expiryDate;
+      if (payment.planId && payment.membership) {
+        const plan = await prisma.pricingPlan.findUnique({ where: { id: payment.planId } });
+        if (plan && plan.durationDays) {
+          if (payment.description?.includes("Renewal") || new Date(payment.membership.expiryDate) < new Date()) {
+            const baseDate = new Date(payment.membership.expiryDate) < new Date() ? new Date() : new Date(payment.membership.expiryDate);
+            baseDate.setDate(baseDate.getDate() + plan.durationDays);
+            newExpiryDate = baseDate;
+          }
+        }
+      }
+
       await prisma.membership.update({
         where: { id: payment.membershipId },
         data: {
           pendingAmount: pendingSum,
           status: pendingSum === 0 ? "ACTIVE" : "PARTIALLY_PAID",
+          ...(newExpiryDate ? { expiryDate: newExpiryDate } : {}),
         },
       });
     }
 
     // Check if user has any other pending payments
     const userPending = await prisma.payment.count({
-      where: { userId: payment.userId, status: "PENDING" },
+      where: { userId: payment.userId, status: { in: ["PENDING", "OVERDUE"] }, amount: { gt: 0 } },
     });
 
     if (userPending === 0) {
@@ -85,12 +113,24 @@ export async function markPaymentCompleted(id: string) {
         where: { id: payment.userId },
         select: { membershipStatus: true },
       });
-      if (user && user.membershipStatus === "PAYMENT_PENDING") {
+      if (user && (user.membershipStatus === "PAYMENT_PENDING" || user.membershipStatus === "EXPIRED" || user.membershipStatus === "REGISTERED")) {
         await prisma.user.update({
           where: { id: payment.userId },
           data: { membershipStatus: "ACTIVE" },
         });
       }
+    }
+
+    // Notify admins about payment completion
+    const paidMember = await prisma.user.findUnique({ where: { id: payment.userId }, select: { firstName: true, lastName: true } });
+    if (paidMember) {
+      createAdminNotification({
+        type: "PAYMENT_RECEIVED",
+        title: "Payment Received",
+        message: `₹${payment.amount.toLocaleString()} received from ${paidMember.firstName} ${paidMember.lastName}`,
+        relatedUserId: payment.userId,
+        relatedPaymentId: payment.id,
+      }).catch(console.error);
     }
 
     revalidatePath("/admin");
