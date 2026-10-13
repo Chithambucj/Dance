@@ -294,6 +294,21 @@ body.reveal-ready [data-reveal].is-revealed {
   }
 }
 
+@media (max-width: 374px) {
+  .hero-stack-card-0 {
+    transform: translate3d(-18px, -50%, 0px) rotate(-2.5deg) scale(1);
+  }
+  .hero-stack-card-1 {
+    transform: translate3d(18px, calc(-50% + 6px), 0px) rotate(3deg) scale(0.92);
+  }
+  .hero-stack-card-2 {
+    transform: translate3d(42px, calc(-50% + 12px), 0px) rotate(1deg) scale(0.84);
+  }
+  .hero-stack-card-3 {
+    transform: translate3d(58px, calc(-50% + 16px), 0px) rotate(-1deg) scale(0.76);
+  }
+}
+
 /* ── StepUp Dance Studio Loading & Shimmer Animations (Gentle & Smooth) ── */
 @keyframes dance-shimmer {
   0% {

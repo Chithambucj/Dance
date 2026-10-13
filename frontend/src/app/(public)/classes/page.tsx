@@ -145,7 +145,7 @@ export default async function ClassesPage() {
       <section className="py-20 text-center">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-black text-white mb-4">Ready to Pick a Class?</h2>
-          <p className="text-gray-400 text-lg mb-8 font-medium">Book a ₹499 trial class and find your rhythm.</p>
+          <p className="text-gray-400 text-lg mb-8 font-medium">Book a FREE trial class and find your rhythm.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/schedule">
               <Button variant="outline" className="rounded-full border-white/20 text-white hover:bg-white/5 px-8 h-12 font-bold">

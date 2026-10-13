@@ -558,9 +558,24 @@ async function main() {
     ],
   });
 
-  // ── 10. Pricing Plans (Paid Plans Only) ───────────────────
+  // ── 10. Pricing Plans ────────────────────────────────────
   await prisma.pricingPlan.createMany({
     data: [
+      {
+        name: "Trial Class",
+        description: "Experience our dance studio with a free trial class.",
+        price: 0,
+        period: "one time",
+        billingPeriod: "TRIAL",
+        durationDays: 7,
+        classesIncluded: "1 Trial Class",
+        validity: "7 Days",
+        features: JSON.stringify(["1 Trial Class", "Valid for 7 Days", "Access to Any Style"]),
+        isFeatured: false,
+        isPublished: true,
+        displayOrder: 0,
+        badge: "Intro Pass",
+      },
       {
         name: "Monthly Plan",
         description: "Our most popular membership for consistent dance progression.",

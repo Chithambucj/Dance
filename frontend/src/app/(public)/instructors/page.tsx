@@ -107,7 +107,7 @@ export default async function InstructorsPage() {
       <section className="py-16 bg-[#0D0E14] text-center">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-black text-white mb-3">Learn From the Best</h2>
-          <p className="text-gray-400 mb-6 font-medium">Start your journey with a ₹499 trial class today.</p>
+          <p className="text-gray-400 mb-6 font-medium">Start your journey with a FREE trial class today.</p>
           <Link href="/pricing">
             <Button className="rounded-full px-8 h-12 font-bold bg-gradient-to-r from-[#FF7700] to-[#FF007A] hover:brightness-110 shadow-lg shadow-[#FF7700]/25">
               Book a Class <ArrowRight className="w-4 h-4 ml-1" />

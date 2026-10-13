@@ -27,6 +27,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Plan not found or unavailable." }, { status: 404 });
     }
 
+    if (plan.price <= 0 || plan.billingPeriod === "TRIAL" || plan.name.toLowerCase().includes("trial")) {
+      return NextResponse.json({ error: "Trial classes are free and do not require payment." }, { status: 400 });
+    }
+
     const amountInPaise = Math.round(plan.price * 100);
 
     // Create Razorpay order

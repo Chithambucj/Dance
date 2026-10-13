@@ -84,6 +84,10 @@ export default function PlanSelectionClient({
 
   async function handleProceedToPayment() {
     if (!selectedPlan) return;
+    if (selectedPlan.price <= 0 || selectedPlan.billingPeriod === "TRIAL") {
+      router.push("/free-trial");
+      return;
+    }
     setLoading(true);
     setError("");
 
