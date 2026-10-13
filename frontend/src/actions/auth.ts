@@ -138,40 +138,29 @@ export async function loginAction(formData: FormData) {
       },
       memberState.hasPaidMembership
     );
+
+    // Determine destination using member's actual membership/payment history
+    let redirectTo = "/plans";
+    if (user.role === "ADMIN") {
+      redirectTo = "/admin";
+    } else {
+      const { state } = memberState;
+      if (
+        state === "EXISTING_ACTIVE_MEMBER" ||
+        state === "EXISTING_EXPIRED_MEMBER" ||
+        state === "ACTIVE_FREE_TRIAL_MEMBER"
+      ) {
+        redirectTo = "/member/dashboard";
+      } else {
+        redirectTo = "/plans";
+      }
+    }
+
+    return { success: true, redirectTo };
   } catch (error) {
     console.error("Login Error:", error);
     return { success: false, error: "An unexpected error occurred. Please try again." };
   }
-
-  // Redirect after session is saved — must be outside try/catch
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (user?.role === "ADMIN") {
-    redirect("/admin");
-  }
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Determine destination using member's actual membership/payment history
-  const { state } = await getMemberLifecycleState(user.id);
-
-  // Existing active or expired paid member, or active free trial -> Member Dashboard
-  if (
-    state === "EXISTING_ACTIVE_MEMBER" ||
-    state === "EXISTING_EXPIRED_MEMBER" ||
-    state === "ACTIVE_FREE_TRIAL_MEMBER"
-  ) {
-    redirect("/member/dashboard");
-  }
-
-  // Free trial expired without paying -> Plans page
-  if (state === "EXPIRED_FREE_TRIAL_MEMBER") {
-    redirect("/plans");
-  }
-
-  // Brand-new member who has never had a paid membership -> Plans onboarding
-  redirect("/plans");
 }
 
 // ── Logout ────────────────────────────────────────────────────────────────────

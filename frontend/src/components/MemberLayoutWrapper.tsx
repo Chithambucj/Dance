@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MemberSidebar from "@/components/MemberSidebar";
 import { Menu, Bell, Search } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
@@ -14,6 +14,11 @@ interface Props {
 
 export default function MemberLayoutWrapper({ children, initials, fullName, membershipStatus }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    // Notify transition manager that member dashboard layout is mounted and ready
+    window.dispatchEvent(new Event("stepup_dashboard_ready"));
+  }, []);
 
   const statusBadge = () => {
     if (membershipStatus === "FREE_TRIAL") return <span className="text-amber-600 font-semibold text-xs">Free Trial</span>;

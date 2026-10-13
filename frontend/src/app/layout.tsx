@@ -4,6 +4,7 @@ import "./globals.css";
 import AnimatedCursor from "@/components/AnimatedCursor";
 import InitialAppLoader from "@/components/InitialAppLoader";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
+import DashboardLoadingManager from "@/components/DashboardLoadingManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <NavigationProgressBar />
         <InitialAppLoader />
+        <DashboardLoadingManager />
         <AnimatedCursor />
         {children}
       </body>

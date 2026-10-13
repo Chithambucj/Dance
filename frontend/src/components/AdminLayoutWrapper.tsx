@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import { Menu } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
@@ -15,6 +15,11 @@ interface Props {
 
 export default function AdminLayoutWrapper({ children, initials, fullName, roleLabel }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    // Notify transition manager that admin dashboard layout is mounted and ready
+    window.dispatchEvent(new Event("stepup_dashboard_ready"));
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#f8fafc] font-sans overflow-hidden">

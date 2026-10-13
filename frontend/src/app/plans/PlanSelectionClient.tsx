@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -65,6 +65,11 @@ export default function PlanSelectionClient({
   const [step, setStep]                 = useState<"select" | "confirm" | "paying">("select");
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState("");
+
+  useEffect(() => {
+    // Notify transition manager that plans selection is mounted and ready
+    window.dispatchEvent(new Event("stepup_dashboard_ready"));
+  }, []);
 
   function getFeatures(plan: Plan): string[] {
     try { return JSON.parse(plan.features); }
