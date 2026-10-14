@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createAnnouncement, deleteAnnouncement, editAnnouncement } from "@/actions/announcements";
-import { Plus, Trash2, Edit2, Loader2, Megaphone, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  createAnnouncement,
+  deleteAnnouncement,
+  editAnnouncement,
+  togglePublishAnnouncement,
+} from "@/actions/announcements";
+import { Plus, Trash2, Edit2, Loader2, Megaphone, X, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +17,8 @@ interface Announcement {
   id: string;
   title: string;
   content: string;
-  createdAt: Date;
+  isPublished?: boolean;
+  createdAt: Date | string;
 }
 
 interface AnnouncementManagerProps {
@@ -19,6 +26,7 @@ interface AnnouncementManagerProps {
 }
 
 export default function AnnouncementManager({ initialAnnouncements }: AnnouncementManagerProps) {
+  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [error, setError]       = useState("");
@@ -27,6 +35,7 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
   const [isCreatePending, startCreate] = useTransition();
   const [isEditPending, startEdit] = useTransition();
   const [deletingId, setDeletingId]    = useState<string | null>(null);
+  const [togglingId, setTogglingId]    = useState<string | null>(null);
 
   function handleCreate(formData: FormData) {
     setError("");
@@ -35,7 +44,8 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
       if (result.success) {
         setSuccess("✅ Announcement published to all members!");
         setShowForm(false);
-        setTimeout(() => setSuccess(""), 3000);
+        router.refresh();
+        setTimeout(() => setSuccess(""), 3500);
       } else {
         setError(result.error || "Failed to create announcement.");
       }
@@ -50,7 +60,8 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
       if (result.success) {
         setSuccess("✅ Announcement updated successfully!");
         setEditingAnnouncement(null);
-        setTimeout(() => setSuccess(""), 3000);
+        router.refresh();
+        setTimeout(() => setSuccess(""), 3500);
       } else {
         setEditError(result.error || "Failed to update announcement.");
       }
@@ -58,10 +69,31 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this announcement?")) return;
+    if (!confirm("Are you sure you want to delete this announcement?")) return;
     setDeletingId(id);
-    await deleteAnnouncement(id);
+    const result = await deleteAnnouncement(id);
+    if (result.success) {
+      setSuccess("✅ Announcement deleted successfully!");
+      router.refresh();
+      setTimeout(() => setSuccess(""), 3500);
+    } else {
+      setError(result.error || "Failed to delete announcement.");
+    }
     setDeletingId(null);
+  }
+
+  async function handleTogglePublish(ann: Announcement) {
+    const nextState = !ann.isPublished;
+    setTogglingId(ann.id);
+    const result = await togglePublishAnnouncement(ann.id, nextState);
+    if (result.success) {
+      setSuccess(nextState ? "✅ Announcement published to members!" : "✅ Announcement unpublished (saved as draft)!");
+      router.refresh();
+      setTimeout(() => setSuccess(""), 3500);
+    } else {
+      setError(result.error || "Failed to update announcement publication status.");
+    }
+    setTogglingId(null);
   }
 
   return (
@@ -85,8 +117,14 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
       </div>
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-100 rounded-2xl text-green-700 font-semibold text-sm">
+        <div className="p-4 bg-green-50 border border-green-100 rounded-2xl text-green-700 font-semibold text-sm animate-in fade-in">
           {success}
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 font-semibold text-sm animate-in fade-in">
+          {error}
         </div>
       )}
 
@@ -97,9 +135,6 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
             <Megaphone className="w-5 h-5 text-primary" /> New Announcement
           </h2>
           <form action={handleCreate} className="space-y-4">
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700 font-medium">{error}</div>
-            )}
             <div className="space-y-1.5">
               <Label htmlFor="ann-title" className="text-gray-700 font-semibold text-sm">Title *</Label>
               <Input
@@ -121,17 +156,29 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
                 className="w-full rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none font-medium"
               />
             </div>
-            <Button
-              type="submit"
-              disabled={isCreatePending}
-              className="rounded-xl bg-primary hover:bg-primary/90 text-white font-bold px-6 h-11"
-            >
-              {isCreatePending ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Publishing...
-                </span>
-              ) : "Publish Announcement"}
-            </Button>
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2.5 text-sm font-semibold text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="isPublished"
+                  defaultChecked={true}
+                  className="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary/20 accent-primary"
+                />
+                Publish immediately to members
+              </label>
+
+              <Button
+                type="submit"
+                disabled={isCreatePending}
+                className="rounded-xl bg-primary hover:bg-primary/90 text-white font-bold px-6 h-11"
+              >
+                {isCreatePending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Publishing...
+                  </span>
+                ) : "Publish Announcement"}
+              </Button>
+            </div>
           </form>
         </div>
       )}
@@ -179,6 +226,19 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
                   className="w-full rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none font-medium"
                 />
               </div>
+
+              <div className="pt-1">
+                <label className="flex items-center gap-2.5 text-sm font-semibold text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isPublished"
+                    defaultChecked={editingAnnouncement.isPublished ?? true}
+                    className="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary/20 accent-primary"
+                  />
+                  Published (visible to members)
+                </label>
+              </div>
+
               <div className="pt-2 flex justify-end gap-3">
                 <Button
                   type="button"
@@ -215,15 +275,24 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
           </div>
         ) : (
           initialAnnouncements.map((ann) => (
-            <div key={ann.id} className="bg-white rounded-2xl border-0 shadow-sm shadow-gray-100 p-6">
+            <div key={ann.id} className="bg-white rounded-2xl border-0 shadow-sm shadow-gray-100 p-6 transition-all">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                     <Megaphone className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-base leading-tight">{ann.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{ann.content}</p>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h3 className="font-bold text-gray-900 text-base leading-tight">{ann.title}</h3>
+                      <span className={`text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                        ann.isPublished
+                          ? "bg-green-50 text-green-700 border border-green-200/60"
+                          : "bg-amber-50 text-amber-700 border border-amber-200/60"
+                      }`}>
+                        {ann.isPublished ? "Published" : "Unpublished"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1.5 leading-relaxed whitespace-pre-line">{ann.content}</p>
                     <p className="text-xs text-gray-400 font-semibold mt-3">
                       {new Date(ann.createdAt).toLocaleDateString("en-US", {
                         weekday: "long", year: "numeric", month: "long", day: "numeric"
@@ -232,6 +301,24 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => handleTogglePublish(ann)}
+                    disabled={togglingId === ann.id}
+                    className={`p-2 rounded-xl transition-colors ${
+                      ann.isPublished
+                        ? "text-gray-400 hover:text-amber-600 hover:bg-amber-50"
+                        : "text-gray-400 hover:text-green-600 hover:bg-green-50"
+                    }`}
+                    title={ann.isPublished ? "Unpublish announcement" : "Publish announcement"}
+                  >
+                    {togglingId === ann.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    ) : ann.isPublished ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                   <button
                     onClick={() => setEditingAnnouncement(ann)}
                     className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-colors"
@@ -259,4 +346,3 @@ export default function AnnouncementManager({ initialAnnouncements }: Announceme
     </div>
   );
 }
-

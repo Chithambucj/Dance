@@ -19,19 +19,19 @@ export default function Home() {
 
       <main className="flex-1 w-full overflow-x-hidden pt-[70px] sm:pt-[78px] lg:pt-[86px]">
         {/* ── Hero Section ────────────────────────────────────────── */}
-        <section id="home" className="w-full relative overflow-hidden pt-2 pb-8 sm:py-14 lg:py-22 bg-[#FFFDF9] scroll-mt-20 sm:scroll-mt-24 lg:scroll-mt-28">
+        <section id="home" className="w-full relative overflow-hidden bg-[#FFFDF9] scroll-mt-20 sm:scroll-mt-24 lg:scroll-mt-28 min-h-[calc(100svh-70px)] sm:min-h-0 flex flex-col justify-start">
           {/* Subtle playful background elements with subtle parallax depth */}
           <div data-parallax="0.18" className="absolute top-10 left-10 w-72 h-72 rounded-full bg-[#FFD200]/20 blur-3xl pointer-events-none animate-pulse-glow" />
           <div data-parallax="-0.12" className="absolute top-40 right-10 w-80 h-80 rounded-full bg-[#FF1E82]/15 blur-3xl pointer-events-none animate-pulse-glow" />
           <div data-parallax="0.22" className="absolute -bottom-10 left-1/3 w-96 h-96 rounded-full bg-[#7928CA]/10 blur-3xl pointer-events-none animate-pulse-glow" />
 
-          <div className="container px-4 sm:px-6 lg:px-12 mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-3.5 xs:gap-4 sm:gap-10 lg:gap-14">
+          <div className="container px-3.5 xs:px-4 sm:px-6 lg:px-12 mx-auto relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-between sm:justify-start gap-2.5 xs:gap-3.5 sm:gap-10 lg:gap-14 pt-2 xs:pt-3 pb-4 xs:pb-6 sm:pt-14 sm:pb-8 lg:py-20">
             
             {/* Left Content Wrapper (contents on mobile for flex reordering, block on lg) */}
             <div className="contents lg:block lg:w-[48%] xl:w-5/12 lg:space-y-8 text-center lg:text-left z-20 w-full">
               
               {/* Block 1: Header Info (Badge, Title, Description) */}
-              <div className="order-1 space-y-2 xs:space-y-3 sm:space-y-6 text-center lg:text-left z-20 w-full">
+              <div className="order-1 space-y-1.5 xs:space-y-2 sm:space-y-6 text-center lg:text-left z-20 w-full shrink-0">
                 {/* Playful Sticker Badge (hidden on mobile, shown on desktop) */}
                 <div 
                   id="hero-badge" 
@@ -45,14 +45,14 @@ export default function Home() {
                 {/* Bold Oversized Display Typography with Playful Accents */}
                 <div className="relative inline-block w-full max-w-xl mx-auto lg:mx-0">
                   {/* Decorative doodle rays on mobile (matching reference design) */}
-                  <div className="lg:hidden absolute -top-4 -left-1 sm:left-2 text-[#FF1E82] pointer-events-none animate-float-slow">
+                  <div className="lg:hidden absolute -top-4 xs:-top-5 -left-1 sm:left-2 text-[#FF1E82] pointer-events-none animate-float-slow">
                     <svg className="w-6 h-6 -rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                       <path d="M4 14L1 15" />
                       <path d="M6 7L3 5" />
                       <path d="M12 4V1" />
                     </svg>
                   </div>
-                  <div className="lg:hidden absolute -top-4 -right-1 sm:right-2 text-[#7928CA] pointer-events-none animate-float-reverse">
+                  <div className="lg:hidden absolute -top-4 xs:-top-5 -right-1 sm:right-2 text-[#7928CA] pointer-events-none animate-float-reverse">
                     <svg className="w-6 h-6 rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                       <path d="M20 14L23 15" />
                       <path d="M18 7L21 5" />
@@ -63,7 +63,7 @@ export default function Home() {
                   <h1 
                     id="hero-title"
                     data-reveal="fade-up"
-                    className="delay-150 text-[1.85rem] xs:text-[2.2rem] sm:text-5xl md:text-6xl lg:text-[5.5rem] font-black tracking-tight text-[#121020] leading-[1.12] sm:leading-[1.04]"
+                    className="delay-150 text-[1.75rem] xs:text-[2.05rem] min-[390px]:text-[2.25rem] min-[430px]:text-[2.45rem] sm:text-5xl md:text-6xl lg:text-[5.5rem] font-black tracking-tight text-[#121020] leading-[1.08] sm:leading-[1.04]"
                   >
                     Dance Your Way <br className="hidden sm:inline" />
                     <span className="relative inline-block mt-0.5 sm:mt-2">
@@ -72,7 +72,7 @@ export default function Home() {
                       </span>
                       {/* Playful sketched doodle underline loop */}
                       <svg
-                        className="absolute -bottom-1.5 sm:-bottom-3 left-0 w-full h-3 sm:h-6 text-[#FFD200] pointer-events-none overflow-visible"
+                        className="absolute -bottom-1 sm:-bottom-3 left-0 w-full h-2.5 sm:h-6 text-[#FFD200] pointer-events-none overflow-visible"
                         viewBox="0 0 250 20"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
@@ -92,27 +92,27 @@ export default function Home() {
                 <p 
                   id="hero-desc"
                   data-reveal="fade-up"
-                  className="delay-250 text-xs xs:text-sm sm:text-base md:text-xl text-[#4A455A] max-w-md sm:max-w-xl mx-auto lg:mx-0 font-semibold leading-normal sm:leading-relaxed px-1 sm:px-0"
+                  className="delay-250 text-[12.5px] xs:text-[13.5px] min-[390px]:text-[14.5px] min-[430px]:text-[15px] sm:text-base md:text-xl text-[#4A455A] max-w-[320px] xs:max-w-[360px] min-[390px]:max-w-[400px] sm:max-w-xl mx-auto lg:mx-0 font-semibold leading-snug sm:leading-relaxed px-1 sm:px-0"
                 >
                   Join our expert-led dance classes and discover the joy of movement in a fun, vibrant, and energetic environment.
                 </p>
               </div>
 
               {/* Block 3: Action Buttons (order-3 on mobile, placed directly below carousel) */}
-              <div id="hero-actions" data-reveal="fade-up" className="delay-350 order-3 pt-1 xs:pt-2 lg:pt-0 space-y-2 sm:space-y-4 w-full z-20">
-                <div className="flex flex-col sm:flex-row gap-2.5 xs:gap-3 sm:gap-4 justify-center lg:justify-start max-w-[340px] xs:max-w-md sm:max-w-none mx-auto lg:mx-0 w-full">
+              <div id="hero-actions" data-reveal="fade-up" className="delay-350 order-3 pt-1 xs:pt-1.5 lg:pt-0 space-y-1.5 sm:space-y-4 w-full z-20 shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2.5 xs:gap-3 sm:gap-4 justify-center lg:justify-start max-w-[330px] xs:max-w-[360px] min-[390px]:max-w-[390px] sm:max-w-none mx-auto lg:mx-0 w-full">
                   {/* 5. Explore Classes Button */}
                   <Link href="#classes" className="w-full sm:w-auto">
-                    <Button className="rounded-full h-12 xs:h-13 sm:h-15 lg:h-16 px-5 sm:px-10 text-sm xs:text-base sm:text-lg bg-[#FFD200] hover:bg-[#FFC700] text-[#121020] font-black border-2 border-[#121020] shadow-[3px_4px_0px_#121020] hover:-translate-y-0.5 hover:shadow-[4px_5px_0px_#121020] active:translate-x-1 active:translate-y-1 transition-all w-full flex items-center justify-center gap-2">
+                    <Button className="rounded-full h-13 xs:h-13.5 min-[390px]:h-14 sm:h-15 lg:h-16 px-5 xs:px-6 sm:px-10 text-[13.5px] xs:text-[14.5px] min-[390px]:text-base sm:text-lg bg-[#FFD200] hover:bg-[#FFC700] text-[#121020] font-black border-2 border-[#121020] shadow-[2.5px_3.5px_0px_#121020] sm:shadow-[3px_4px_0px_#121020] hover:-translate-y-0.5 hover:shadow-[4px_5px_0px_#121020] active:translate-x-1 active:translate-y-1 transition-all w-full flex items-center justify-center gap-2">
                       <span>Explore Classes</span>
-                      <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
+                      <ArrowUpRight className="w-4.5 h-4.5 xs:w-5 xs:h-5 stroke-[2.5]" />
                     </Button>
                   </Link>
 
                   {/* 6. Book a Trial Class Button */}
                   <Link href="#contact" className="w-full sm:w-auto">
-                    <Button variant="outline" className="rounded-full h-12 xs:h-13 sm:h-15 lg:h-16 px-5 sm:px-9 text-sm xs:text-base sm:text-lg bg-white border-2 border-[#121020] text-[#121020] hover:bg-[#FFE4F0] flex items-center justify-center gap-2.5 w-full font-black shadow-[3px_4px_0px_#121020] hover:-translate-y-0.5 hover:shadow-[4px_5px_0px_#121020] active:translate-x-1 active:translate-y-1 transition-all">
-                      <span className="w-3.5 h-3.5 rounded-full border-2 border-[#FF1E82] inline-block shrink-0" />
+                    <Button variant="outline" className="rounded-full h-13 xs:h-13.5 min-[390px]:h-14 sm:h-15 lg:h-16 px-5 xs:px-6 sm:px-9 text-[13.5px] xs:text-[14.5px] min-[390px]:text-base sm:text-lg bg-white border-2 border-[#121020] text-[#121020] hover:bg-[#FFE4F0] flex items-center justify-center gap-2.5 w-full font-black shadow-[2.5px_3.5px_0px_#121020] sm:shadow-[3px_4px_0px_#121020] hover:-translate-y-0.5 hover:shadow-[4px_5px_0px_#121020] active:translate-x-1 active:translate-y-1 transition-all">
+                      <span className="w-3.5 h-3.5 xs:w-4 xs:h-4 rounded-full border-2 border-[#FF1E82] inline-block shrink-0" />
                       <span>Book a Trial Class</span>
                     </Button>
                   </Link>
@@ -132,13 +132,15 @@ export default function Home() {
             </div>
 
             {/* Block 2: Animated Hero Image Carousel (order-2 on mobile, right column on desktop) */}
-            <div id="hero-visual" data-reveal="fade-scale" className="delay-200 order-2 lg:order-none lg:w-[52%] xl:w-7/12 relative flex justify-center z-10 w-full my-0.5 xs:my-1 sm:my-3 lg:my-0">
+            <div id="hero-visual" data-reveal="fade-scale" className="delay-200 order-2 lg:order-none lg:w-[52%] xl:w-7/12 relative flex justify-center z-10 w-full my-0 sm:my-3 lg:my-0">
               <AnimatedHeroImageCarousel />
             </div>
           </div>
+        </section>
 
-          {/* ── Stats Bar (Colorful Playful Sticker Cards) ─────────────── */}
-          <div className="container px-4 sm:px-6 lg:px-12 mx-auto relative z-20 mt-8 xs:mt-10 sm:mt-16 lg:mt-22">
+        {/* ── Stats Bar (Colorful Playful Sticker Cards) ─────────────── */}
+        <section id="stats" className="w-full relative z-20 bg-[#FFFDF9] py-8 sm:py-0 sm:mt-12 sm:mb-16 lg:mt-16 lg:mb-22">
+          <div className="container px-4 sm:px-6 lg:px-12 mx-auto">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
               
               {/* Stat 1: 10+ Dance Styles (Sunny Yellow) */}

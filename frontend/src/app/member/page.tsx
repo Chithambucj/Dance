@@ -2,6 +2,8 @@ import { requireAuth } from "@/actions/auth";
 import { checkAndExpireCurrentUserTrial } from "@/actions/freeTrial";
 import { getMemberLifecycleState } from "@/lib/memberStatus";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -399,41 +401,74 @@ export default async function MemberDashboardPage({
 
   // ── 3. Announcements ──────────────────────────────────────
   if (tab === "announcements") {
-    const announcements = await prisma.announcement.findMany({
-      where: { isPublished: true },
-      orderBy: { createdAt: "desc" },
-    });
+    const now = new Date();
+    let announcements: Array<{
+      id: string;
+      title: string;
+      content: string;
+      createdAt: Date;
+    }> = [];
+    let loadError = false;
+
+    try {
+      announcements = await prisma.announcement.findMany({
+        where: {
+          isPublished: true,
+          publishDate: { lte: now },
+          OR: [
+            { expiryDate: null },
+            { expiryDate: { gte: now } },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (err) {
+      console.error("Failed to load announcements for member:", err);
+      loadError = true;
+    }
+
     return (
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Announcements &amp; Updates</h1>
           <p className="text-gray-500 mt-1 font-medium">Studio news and special notices from our studio.</p>
         </div>
+
+        {loadError && (
+          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 font-medium text-sm">
+            Failed to load announcements. Please refresh the page to try again.
+          </div>
+        )}
+
         <div className="space-y-4">
-          {announcements.length > 0 ? announcements.map((ann) => (
-            <Card key={ann.id} className="rounded-3xl border-0 shadow-sm shadow-gray-100 bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Megaphone className="w-5 h-5 text-primary" />
+          {announcements.length > 0 ? (
+            announcements.map((ann) => (
+              <Card key={ann.id} className="rounded-3xl border-0 shadow-sm shadow-gray-100 bg-white">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Megaphone className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-lg">{ann.title}</h3>
+                      <p className="text-sm text-gray-600 mt-1.5 leading-relaxed font-medium whitespace-pre-line">{ann.content}</p>
+                      <p className="text-xs text-gray-400 font-semibold mt-3">
+                        {new Date(ann.createdAt).toLocaleDateString("en-IN", {
+                          weekday: "long", year: "numeric", month: "long", day: "numeric",
+                        })}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">{ann.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1.5 leading-relaxed font-medium">{ann.content}</p>
-                    <p className="text-xs text-gray-400 font-semibold mt-3">
-                      {new Date(ann.createdAt).toLocaleDateString("en-IN", {
-                        weekday: "long", year: "numeric", month: "long", day: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )) : (
-            <div className="bg-white rounded-3xl border-0 shadow-sm shadow-gray-100 p-12 text-center">
-              <Megaphone className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-              <p className="text-gray-400 font-semibold">No announcements posted yet.</p>
-            </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            !loadError && (
+              <div className="bg-white rounded-3xl border-0 shadow-sm shadow-gray-100 p-12 text-center">
+                <Megaphone className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-400 font-semibold">No announcements posted yet.</p>
+              </div>
+            )
           )}
         </div>
       </div>

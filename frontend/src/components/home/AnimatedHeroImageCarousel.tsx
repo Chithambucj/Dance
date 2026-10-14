@@ -152,14 +152,14 @@ export default function AnimatedHeroImageCarousel() {
       <div
         data-parallax="0.08"
         aria-hidden="true"
-        className="absolute -top-6 right-0 sm:right-4 w-36 h-36 xs:w-48 xs:h-48 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-[42%_58%_70%_30%/45%_45%_55%_55%] bg-[#FFD200] opacity-90 -z-10 pointer-events-none transform rotate-12 transition-transform duration-700"
+        className="absolute -top-6 right-0 sm:right-4 w-44 h-44 xs:w-56 xs:h-56 min-[390px]:w-64 min-[390px]:h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-[42%_58%_70%_30%/45%_45%_55%_55%] bg-[#FFD200] opacity-90 -z-10 pointer-events-none transform rotate-12 transition-transform duration-700"
       />
 
       {/* Hot Pink Curving Blob */}
       <div
         data-parallax="-0.06"
         aria-hidden="true"
-        className="absolute top-1/4 -left-2 sm:-left-8 w-28 h-28 xs:w-38 xs:h-38 sm:w-64 sm:h-64 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] bg-[#FF1E82] opacity-85 -z-10 pointer-events-none transform -rotate-12 transition-transform duration-700"
+        className="absolute top-1/4 -left-2 sm:-left-8 w-34 h-34 xs:w-44 xs:h-44 min-[390px]:w-52 min-[390px]:h-52 sm:w-64 sm:h-64 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] bg-[#FF1E82] opacity-85 -z-10 pointer-events-none transform -rotate-12 transition-transform duration-700"
       />
 
       {/* Electric Lilac Accenting Blob */}
@@ -182,7 +182,7 @@ export default function AnimatedHeroImageCarousel() {
       </div>
 
       {/* ── Main Layered Stack Stage Container ───────────────────────── */}
-      <div className="relative w-full min-h-[260px] xs:min-h-[300px] sm:min-h-[430px] lg:min-h-[480px] flex items-center justify-center lg:justify-start">
+      <div className="relative w-full min-h-[250px] xs:min-h-[295px] min-[390px]:min-h-[325px] min-[430px]:min-h-[345px] sm:min-h-[430px] lg:min-h-[480px] flex items-center justify-center lg:justify-start">
         
         {/* Side Navigation Arrow: Left (matches reference guide) */}
         <button
@@ -191,9 +191,9 @@ export default function AnimatedHeroImageCarousel() {
             handlePrev();
           }}
           aria-label="Previous dance image"
-          className="flex absolute left-0 sm:left-1 lg:-left-5 xl:-left-6 top-1/2 -translate-y-1/2 z-40 w-8 h-8 xs:w-9 xs:h-9 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-white border-2 border-[#121020] text-[#121020] shadow-[2px_2px_0px_#121020] lg:shadow-[3px_3px_0px_#121020] items-center justify-center hover:bg-[#FFE4F0] hover:scale-105 active:translate-x-0.5 active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#FF1E82]"
+          className="flex absolute left-0 sm:left-1 lg:-left-5 xl:-left-6 top-1/2 -translate-y-1/2 z-40 w-9 h-9 xs:w-10 xs:h-10 min-[390px]:w-10.5 min-[390px]:h-10.5 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-white border-2 border-[#121020] text-[#121020] shadow-[2px_2px_0px_#121020] lg:shadow-[3px_3px_0px_#121020] items-center justify-center hover:bg-[#FFE4F0] hover:scale-105 active:translate-x-0.5 active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#FF1E82]"
         >
-          <ChevronLeft className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+          <ChevronLeft className="w-4.5 h-4.5 xs:w-5 xs:h-5 min-[390px]:w-5.5 min-[390px]:h-5.5 sm:w-6 sm:h-6 stroke-[2.5]" />
         </button>
 
         {/* Side Navigation Arrow: Right (matches reference guide) */}
@@ -203,13 +203,13 @@ export default function AnimatedHeroImageCarousel() {
             handleNext();
           }}
           aria-label="Next dance image"
-          className="flex absolute right-0 sm:right-1 lg:-right-3 xl:-right-4 top-1/2 -translate-y-1/2 z-40 w-8 h-8 xs:w-9 xs:h-9 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-white border-2 border-[#121020] text-[#121020] shadow-[2px_2px_0px_#121020] lg:shadow-[3px_3px_0px_#121020] items-center justify-center hover:bg-[#FFE4F0] hover:scale-105 active:translate-x-0.5 active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#FF1E82]"
+          className="flex absolute right-0 sm:right-1 lg:-right-3 xl:-right-4 top-1/2 -translate-y-1/2 z-40 w-9 h-9 xs:w-10 xs:h-10 min-[390px]:w-10.5 min-[390px]:h-10.5 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-white border-2 border-[#121020] text-[#121020] shadow-[2px_2px_0px_#121020] lg:shadow-[3px_3px_0px_#121020] items-center justify-center hover:bg-[#FFE4F0] hover:scale-105 active:translate-x-0.5 active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#FF1E82]"
         >
-          <ChevronRight className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+          <ChevronRight className="w-4.5 h-4.5 xs:w-5 xs:h-5 min-[390px]:w-5.5 min-[390px]:h-5.5 sm:w-6 sm:h-6 stroke-[2.5]" />
         </button>
 
         {/* ── Layered Cards Stack ───────────────────────────────────── */}
-        <div className="relative w-full h-[250px] xs:h-[290px] sm:h-[420px] lg:h-[460px] flex items-center justify-center lg:justify-start">
+        <div className="relative w-full h-[245px] xs:h-[290px] min-[390px]:h-[320px] min-[430px]:h-[340px] sm:h-[420px] lg:h-[460px] flex items-center justify-center lg:justify-start">
           {heroImages.map((img, index) => {
             const offset = (index - currentIndex + total) % total;
 
@@ -264,10 +264,10 @@ export default function AnimatedHeroImageCarousel() {
                   }
                 }}
                 className={`
-                  absolute top-1/2 rounded-[24px] xs:rounded-[28px] sm:rounded-[36px] overflow-hidden cursor-pointer
+                  absolute top-1/2 rounded-[22px] xs:rounded-[28px] sm:rounded-[36px] overflow-hidden cursor-pointer
                   hero-carousel-card
-                  w-[180px] xs:w-[210px] sm:w-[275px] lg:w-[290px]
-                  h-[240px] xs:h-[280px] sm:h-[385px] lg:h-[420px]
+                  w-[190px] xs:w-[230px] min-[390px]:w-[252px] min-[430px]:w-[270px] sm:w-[275px] lg:w-[290px]
+                  h-[245px] xs:h-[290px] min-[390px]:h-[320px] min-[430px]:h-[340px] sm:h-[385px] lg:h-[420px]
                   ${stackClass}
                   ${
                     isFront
@@ -287,7 +287,7 @@ export default function AnimatedHeroImageCarousel() {
                     src={img.src}
                     alt={img.alt}
                     fill
-                    sizes="(max-width: 640px) 210px, (max-width: 1024px) 280px, 320px"
+                    sizes="(max-width: 640px) 270px, (max-width: 1024px) 290px, 320px"
                     priority={isFront || isSecond}
                     className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                   />
@@ -296,11 +296,11 @@ export default function AnimatedHeroImageCarousel() {
                   <div className="absolute inset-0 bg-gradient-to-t from-[#121020]/75 via-transparent to-black/10 pointer-events-none" />
 
                   {/* Micro Category Pill at bottom of card */}
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-3 sm:left-3 sm:right-3 flex items-center justify-between pointer-events-none z-10">
-                    <span className="bg-white/95 text-[#121020] border border-[#121020]/20 text-[9px] xs:text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm">
+                  <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3 flex items-center justify-between pointer-events-none z-10">
+                    <span className="bg-white/95 text-[#121020] border border-[#121020]/20 text-[9px] xs:text-[10px] min-[390px]:text-[11px] sm:text-[11px] font-black uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm">
                       {img.category}
                     </span>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold text-white/90 uppercase tracking-widest hidden xs:inline drop-shadow-sm">
+                    <span className="text-[9px] xs:text-[10px] min-[390px]:text-[10.5px] sm:text-[10px] font-extrabold text-white/90 uppercase tracking-widest hidden xs:inline drop-shadow-sm">
                       {img.dancerType}
                     </span>
                   </div>
@@ -308,11 +308,11 @@ export default function AnimatedHeroImageCarousel() {
                   {/* Top-Right Orange Stamp: Attached specifically to the Front Highlighted Card (matches reference) */}
                   {isFront && (
                     <div
-                      className="absolute -top-1 -right-1 sm:top-2 sm:right-2 z-30 w-13 h-13 xs:w-16 xs:h-16 sm:w-20 sm:h-20 rounded-full bg-[#FF6600] border-2 border-white text-white flex flex-col items-center justify-center text-center shadow-[0_4px_12px_rgba(18,16,32,0.25)] animate-float-badge cursor-pointer hover:scale-105 transition-transform"
+                      className="absolute -top-1 -right-1 sm:top-2 sm:right-2 z-30 w-[54px] h-[54px] xs:w-[62px] xs:h-[62px] min-[390px]:w-[68px] min-[390px]:h-[68px] sm:w-20 sm:h-20 rounded-full bg-[#FF6600] border-2 border-white text-white flex flex-col items-center justify-center text-center shadow-[0_4px_12px_rgba(18,16,32,0.25)] animate-float-badge cursor-pointer hover:scale-105 transition-transform"
                       style={{ "--badge-rotate": "12deg" } as React.CSSProperties}
                     >
-                      <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-black uppercase tracking-wider leading-tight">StepUp</span>
-                      <span className="text-[7px] xs:text-[8px] font-extrabold uppercase opacity-90">Studio</span>
+                      <span className="text-[8px] xs:text-[9px] min-[390px]:text-[10px] sm:text-[10px] font-black uppercase tracking-wider leading-tight">StepUp</span>
+                      <span className="text-[7px] xs:text-[8px] min-[390px]:text-[8.5px] sm:text-[8px] font-extrabold uppercase opacity-90">Studio</span>
                       <ArrowUpRight className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 mt-0.5" />
                     </div>
                   )}
@@ -344,7 +344,7 @@ export default function AnimatedHeroImageCarousel() {
       </div>
 
       {/* ── Indicator Dots (centered beneath front card on all screens) ── */}
-      <div className="flex items-center justify-center gap-2 mt-2 xs:mt-3 sm:mt-5 z-40 relative">
+      <div className="flex items-center justify-center gap-1.5 xs:gap-2 mt-2 xs:mt-2.5 min-[390px]:mt-3 sm:mt-5 z-40 relative">
         {heroImages.map((img, idx) => {
           const isActive = idx === currentIndex;
           return (
@@ -355,15 +355,15 @@ export default function AnimatedHeroImageCarousel() {
                 setCurrentIndex(idx);
               }}
               aria-label={`Go to slide ${idx + 1}: ${img.title}`}
-              className="min-w-[16px] min-h-[24px] py-1 sm:min-w-[20px] sm:min-h-[36px] flex items-center justify-center group focus:outline-none"
+              className="min-w-[14px] min-h-[18px] py-0.5 sm:min-w-[20px] sm:min-h-[36px] flex items-center justify-center group focus:outline-none"
             >
               <span
                 className={`
                   rounded-full transition-all duration-300 ease-out
                   ${
                     isActive
-                      ? "w-6 h-2 xs:w-7 xs:h-2.5 sm:w-8 sm:h-3 bg-[#FF1E82] shadow-[0_2px_8px_rgba(255,30,130,0.5)] border border-[#121020]"
-                      : "w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 bg-[#FCE7F3] border border-[#121020]/20 hover:bg-[#FFD1E6]"
+                      ? "w-6 h-2 xs:w-7 xs:h-2.5 min-[390px]:w-8 min-[390px]:h-2.5 sm:w-8 sm:h-3 bg-[#FF1E82] shadow-[0_2px_8px_rgba(255,30,130,0.5)] border border-[#121020]"
+                      : "w-2 h-2 xs:w-2.5 xs:h-2.5 min-[390px]:w-2.5 min-[390px]:h-2.5 sm:w-3 sm:h-3 bg-[#FCE7F3] border border-[#121020]/20 hover:bg-[#FFD1E6]"
                   }
                 `}
               />

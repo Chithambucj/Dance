@@ -49,18 +49,18 @@ export default function HomeNavbar() {
         <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
           <Link className="flex items-center gap-2 sm:gap-2.5 group w-fit shrink-0" href="/">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFD200] border-2 border-[#121020] flex items-center justify-center text-[#121020] shadow-[2px_2px_0px_#121020] group-hover:-rotate-6 transition-transform">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 sm:w-5 sm:h-5">
+            <div className="w-10 h-10 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFD200] border-2 border-[#121020] flex items-center justify-center text-[#121020] shadow-[2px_2px_0px_#121020] group-hover:-rotate-6 transition-transform">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-5 sm:h-5">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                 <circle cx="12" cy="13" r="3"/>
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-xl sm:text-2xl tracking-tight text-[#121020] leading-none flex items-center gap-0.5">
+              <span className="font-black text-[23px] xs:text-2xl sm:text-2xl tracking-tight text-[#121020] leading-none flex items-center gap-0.5">
                 Step<span className="text-[#FF1E82]">Up</span>
                 <span className="inline-block w-2 h-2 rounded-full bg-[#FFD200] ml-0.5 ring-2 ring-[#121020]/20 animate-pulse" />
               </span>
-              <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-[#7928CA] hidden xs:block">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#7928CA] hidden xs:block">
                 Dance Studio
               </span>
             </div>
@@ -84,7 +84,7 @@ export default function HomeNavbar() {
             <Link href="/login">
               <Button
                 variant="outline"
-                className="rounded-full px-3.5 sm:px-5 lg:px-6 h-9 sm:h-10 border-2 border-[#121020] text-[#121020] bg-transparent hover:bg-[#121020] hover:text-white font-extrabold text-xs sm:text-sm transition-all shadow-[2px_2px_0px_#121020] active:translate-x-0.5 active:translate-y-0.5"
+                className="rounded-full px-4.5 xs:px-5 sm:px-5 lg:px-6 h-10 sm:h-10 border-2 border-[#121020] text-[#121020] bg-transparent hover:bg-[#121020] hover:text-white font-black text-xs xs:text-sm sm:text-sm transition-all shadow-[2px_2px_0px_#121020] active:translate-x-0.5 active:translate-y-0.5"
               >
                 Login
               </Button>
@@ -102,9 +102,9 @@ export default function HomeNavbar() {
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle navigation menu"
               aria-expanded={mobileOpen}
-              className="lg:hidden w-11 h-11 rounded-xl border-2 border-[#121020] bg-white text-[#121020] shadow-[2px_2px_0px_#121020] flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 transition-all"
+              className="lg:hidden w-11.5 h-11.5 xs:w-12 xs:h-12 rounded-xl border-2 border-[#121020] bg-white text-[#121020] shadow-[2px_2px_0px_#121020] flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 transition-all"
             >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import {
   Users,
   TrendingUp,
   MessageCircle,
+  Megaphone,
   Music2,
 } from "lucide-react";
 
@@ -20,10 +21,11 @@ export default function AdminSidebar({ onNavigate }: Props = {}) {
   const activeTab = searchParams.get("tab") || "dashboard";
 
   const menuItems = [
-    { name: "Dashboard",          id: "dashboard", icon: LayoutDashboard },
-    { name: "Members & Fees",     id: "members",   icon: Users },
-    { name: "Income",             id: "income",    icon: TrendingUp },
-    { name: "WhatsApp Reminders", id: "whatsapp",  icon: MessageCircle },
+    { name: "Dashboard",          id: "dashboard",     icon: LayoutDashboard },
+    { name: "Members & Fees",     id: "members",       icon: Users },
+    { name: "Income",             id: "income",        icon: TrendingUp },
+    { name: "WhatsApp Reminders", id: "whatsapp",      icon: MessageCircle },
+    { name: "Announcements",      id: "announcements", icon: Megaphone },
   ];
 
   return (

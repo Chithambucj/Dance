@@ -3,6 +3,9 @@ import { requireAuth } from "@/actions/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
+import AnnouncementManager from "@/components/admin/AnnouncementManager";
+
+export const dynamic = "force-dynamic";
 import AddMemberModal from "@/components/admin/AddMemberModal";
 import AddPaymentModal from "@/components/admin/AddPaymentModal";
 import EditPaymentModal from "@/components/admin/EditPaymentModal";
@@ -374,6 +377,16 @@ export default async function AdminDashboardPage({
         expiredTrialMembers={expiredTrialMembers}
       />
     );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 6. ANNOUNCEMENTS TAB
+  // ══════════════════════════════════════════════════════════════════════════
+  if (tab === "announcements") {
+    const announcements = await prisma.announcement.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    return <AnnouncementManager initialAnnouncements={announcements} />;
   }
 
   // Default fallback — redirect to dashboard

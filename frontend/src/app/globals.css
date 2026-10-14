@@ -284,28 +284,28 @@ body.reveal-ready [data-reveal].is-revealed {
     transform: translate3d(-16px, -50%, 0px) rotate(-3deg) scale(1);
   }
   .hero-stack-card-1 {
-    transform: translate3d(24px, calc(-50% + 8px), 0px) rotate(3.5deg) scale(0.92);
+    transform: translate3d(24px, calc(-50% + 7px), 0px) rotate(3.5deg) scale(0.92);
   }
   .hero-stack-card-2 {
-    transform: translate3d(54px, calc(-50% + 14px), 0px) rotate(1deg) scale(0.84);
+    transform: translate3d(50px, calc(-50% + 12px), 0px) rotate(1deg) scale(0.84);
   }
   .hero-stack-card-3 {
-    transform: translate3d(72px, calc(-50% + 20px), 0px) rotate(-1.5deg) scale(0.76);
+    transform: translate3d(68px, calc(-50% + 16px), 0px) rotate(-1.5deg) scale(0.76);
   }
 }
 
 @media (max-width: 374px) {
   .hero-stack-card-0 {
-    transform: translate3d(-18px, -50%, 0px) rotate(-2.5deg) scale(1);
+    transform: translate3d(-13px, -50%, 0px) rotate(-2.5deg) scale(1);
   }
   .hero-stack-card-1 {
-    transform: translate3d(18px, calc(-50% + 6px), 0px) rotate(3deg) scale(0.92);
+    transform: translate3d(18px, calc(-50% + 5px), 0px) rotate(3deg) scale(0.92);
   }
   .hero-stack-card-2 {
-    transform: translate3d(42px, calc(-50% + 12px), 0px) rotate(1deg) scale(0.84);
+    transform: translate3d(38px, calc(-50% + 10px), 0px) rotate(1deg) scale(0.84);
   }
   .hero-stack-card-3 {
-    transform: translate3d(58px, calc(-50% + 16px), 0px) rotate(-1deg) scale(0.76);
+    transform: translate3d(50px, calc(-50% + 14px), 0px) rotate(-1deg) scale(0.76);
   }
 }
 
