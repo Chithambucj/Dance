@@ -25,6 +25,7 @@ import {
 
 import AdminIncomeDashboard from "@/components/admin/dashboard/AdminIncomeDashboard";
 import WhatsAppRemindersView from "@/components/admin/reminders/WhatsAppRemindersView";
+import IncomeTrackerView, { IncomePaymentRecord, IncomeMetrics } from "@/components/admin/income/IncomeTrackerView";
 import { generateSystemNotifications } from "@/actions/notifications";
 import { getOutstandingInvoices, getMemberCounts } from "@/actions/membersData";
 import { getExpiredFreeTrialWhere, IS_FREE_TRIAL_WHERE } from "@/lib/memberQueries";
@@ -159,108 +160,76 @@ export default async function AdminDashboardPage({
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const yearStart  = new Date(now.getFullYear(), 0, 1);
 
-    const [todayAgg, weekAgg, monthAgg, yearAgg, allPayments] = await Promise.all([
+    const [todayAgg, weekAgg, monthAgg, yearAgg, allPayments, allPlans] = await Promise.all([
       prisma.payment.aggregate({ where: { status: "COMPLETED", createdAt: { gte: todayStart } }, _sum: { amount: true }, _count: { id: true } }),
       prisma.payment.aggregate({ where: { status: "COMPLETED", createdAt: { gte: weekStart  } }, _sum: { amount: true }, _count: { id: true } }),
       prisma.payment.aggregate({ where: { status: "COMPLETED", createdAt: { gte: monthStart } }, _sum: { amount: true }, _count: { id: true } }),
       prisma.payment.aggregate({ where: { status: "COMPLETED", createdAt: { gte: yearStart  } }, _sum: { amount: true }, _count: { id: true } }),
       prisma.payment.findMany({
-        where: { status: "COMPLETED" },
         orderBy: { createdAt: "desc" },
-        take: 100,
-        include: { user: { select: { firstName: true, lastName: true } }, plan: { select: { name: true } } },
+        take: 500,
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true, email: true } },
+          plan: { select: { id: true, name: true, billingPeriod: true } },
+        },
+      }),
+      prisma.pricingPlan.findMany({
+        where: { isPublished: true },
+        orderBy: { displayOrder: "asc" },
+        select: { id: true, name: true, billingPeriod: true },
       }),
     ]);
 
-    // Monthly breakdown (last 6 months)
+    // Monthly breakdown (last 6 months) - strictly completed payments
     const monthlyData: { month: string; total: number; count: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const payments = allPayments.filter((p) => {
+      const completedInMonth = allPayments.filter((p) => {
+        if (p.status !== "COMPLETED") return false;
         const cd = new Date(p.createdAt);
         return cd >= d && cd < end;
       });
       monthlyData.push({
         month: d.toLocaleDateString("en-IN", { month: "short", year: "numeric" }),
-        total: payments.reduce((s, p) => s + p.amount, 0),
-        count: payments.length,
+        total: completedInMonth.reduce((s, p) => s + p.amount, 0),
+        count: completedInMonth.length,
       });
     }
 
-    const maxMonthly = Math.max(...monthlyData.map((m) => m.total), 1);
+    const initialPayments: IncomePaymentRecord[] = allPayments.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      userName: `${p.user.firstName} ${p.user.lastName}`.trim(),
+      userEmail: p.user.email,
+      planName: p.plan?.name || p.description || "—",
+      amount: p.amount,
+      status: p.status,
+      createdAt: p.createdAt.toISOString(),
+      paidAt: p.paidAt ? p.paidAt.toISOString() : null,
+      paymentMethod: p.paymentMethod,
+      referenceNumber: p.referenceNumber,
+      description: p.description,
+    }));
+
+    const metrics: IncomeMetrics = {
+      todayTotal: todayAgg._sum.amount ?? 0,
+      todayCount: todayAgg._count.id,
+      weekTotal: weekAgg._sum.amount ?? 0,
+      weekCount: weekAgg._count.id,
+      monthTotal: monthAgg._sum.amount ?? 0,
+      monthCount: monthAgg._count.id,
+      yearTotal: yearAgg._sum.amount ?? 0,
+      yearCount: yearAgg._count.id,
+    };
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Income</h1>
-          <p className="text-gray-400 mt-1 text-sm font-medium">Revenue collected from memberships and fees.</p>
-        </div>
-
-        {/* Period cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Today"      value={fmt(todayAgg._sum.amount ?? 0)} icon={Calendar}   color="text-indigo-600 bg-indigo-50"  sub={`${todayAgg._count.id} payments`} />
-          <StatCard label="This Week"  value={fmt(weekAgg._sum.amount ?? 0)}  icon={TrendingUp} color="text-blue-600 bg-blue-50"     sub={`${weekAgg._count.id} payments`} />
-          <StatCard label="This Month" value={fmt(monthAgg._sum.amount ?? 0)} icon={Banknote}   color="text-green-600 bg-green-50"   sub={`${monthAgg._count.id} payments`} />
-          <StatCard label="This Year"  value={fmt(yearAgg._sum.amount ?? 0)}  icon={DollarSign} color="text-purple-600 bg-purple-50" sub={`${yearAgg._count.id} payments`} />
-        </div>
-
-        {/* Monthly trend */}
-        <Card className="rounded-2xl border-0 shadow-sm bg-white">
-          <CardHeader className="border-b border-gray-50 pb-4">
-            <CardTitle className="text-base font-bold text-gray-900">Monthly Income Trend</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {monthlyData.map((m) => (
-                <div key={m.month} className="flex items-center gap-4">
-                  <p className="text-xs font-bold text-gray-500 w-20 shrink-0">{m.month}</p>
-                  <div className="flex-1 h-7 bg-gray-100 rounded-lg overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-500 rounded-lg flex items-center px-3 transition-all"
-                      style={{ width: `${Math.max((m.total / maxMonthly) * 100, m.total > 0 ? 4 : 0)}%` }}
-                    >
-                      {m.total > 0 && <span className="text-[10px] text-white font-bold whitespace-nowrap">{fmt(m.total)}</span>}
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 w-16 text-right shrink-0">{m.count} paid</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent income payments */}
-        <Card className="rounded-2xl border-0 shadow-sm bg-white overflow-hidden">
-          <CardHeader className="border-b border-gray-50 pb-4">
-            <CardTitle className="text-base font-bold text-gray-900">Recent Income</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <Table className="min-w-[600px]">
-              <TableHeader className="bg-gray-50/50">
-                <TableRow className="border-b border-gray-50">
-                  <TableHead className="font-semibold text-gray-400 px-5 py-3 text-xs">Member</TableHead>
-                  <TableHead className="font-semibold text-gray-400 text-xs">Plan</TableHead>
-                  <TableHead className="font-semibold text-gray-400 text-xs">Amount</TableHead>
-                  <TableHead className="font-semibold text-gray-400 text-xs">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allPayments.slice(0, 20).map((p) => (
-                  <TableRow key={p.id} className="border-b border-gray-50 hover:bg-gray-50/30">
-                    <TableCell className="px-5 py-3 font-semibold text-gray-900 text-sm">{p.user.firstName} {p.user.lastName}</TableCell>
-                    <TableCell className="text-xs text-gray-500">{p.plan?.name || "—"}</TableCell>
-                    <TableCell className="font-bold text-gray-900">{fmt(p.amount)}</TableCell>
-                    <TableCell className="text-xs text-gray-400">
-                      {new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+      <IncomeTrackerView
+        initialPayments={initialPayments}
+        metrics={metrics}
+        monthlyTrend={monthlyData}
+        availablePlans={allPlans}
+      />
     );
   }
 
