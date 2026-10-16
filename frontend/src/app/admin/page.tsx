@@ -342,7 +342,6 @@ export default async function AdminDashboardPage({
 
     const pendingMembers = Array.from(pendingByUser.values());
     const canReceiveCount = pendingMembers.filter((m) => m.hasValidPhone).length;
-    const noPhoneCount = pendingMembers.filter((m) => !m.hasValidPhone).length;
     const totalPendingCount = pendingMembers.length;
 
     // 2. Expired Free Trial members with ₹0 pending balance (distinct and never mixed with fee reminders)
@@ -371,7 +370,6 @@ export default async function AdminDashboardPage({
     return (
       <WhatsAppRemindersView
         canReceiveCount={canReceiveCount}
-        noPhoneCount={noPhoneCount}
         totalPendingCount={totalPendingCount}
         pendingMembers={pendingMembers}
         expiredTrialMembers={expiredTrialMembers}

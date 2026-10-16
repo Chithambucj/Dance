@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import {
   MessageCircle,
-  Phone,
   AlertCircle,
   CheckCircle2,
   Calendar,
@@ -40,7 +39,6 @@ export interface ExpiredTrialMemberItem {
 
 interface Props {
   canReceiveCount: number;
-  noPhoneCount: number;
   totalPendingCount: number;
   pendingMembers: PendingMemberFeeItem[];
   expiredTrialMembers: ExpiredTrialMemberItem[];
@@ -65,7 +63,6 @@ function formatDate(dateStr: string | null | undefined): string {
 
 export default function WhatsAppRemindersView({
   canReceiveCount,
-  noPhoneCount,
   totalPendingCount,
   pendingMembers,
   expiredTrialMembers,
@@ -110,8 +107,8 @@ export default function WhatsAppRemindersView({
         </p>
       </div>
 
-      {/* 4 Summary Cards: Payment Reminders + Dedicated Expired Free Trials Card */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 w-full">
+      {/* 3 Summary Cards: Payment Reminders + Dedicated Expired Free Trials Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 w-full">
         {/* Can Receive Reminder */}
         <div
           onClick={() => setActiveTab("pending")}
@@ -131,29 +128,6 @@ export default function WhatsAppRemindersView({
             </p>
             <p className="text-lg sm:text-2xl font-black text-gray-900 leading-tight">
               {canReceiveCount}
-            </p>
-          </div>
-        </div>
-
-        {/* No Phone On File */}
-        <div
-          onClick={() => setActiveTab("pending")}
-          className={`bg-white rounded-2xl p-2.5 sm:p-4 border shadow-xs flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3.5 text-center sm:text-left transition-all cursor-pointer ${
-            activeTab === "pending"
-              ? "border-gray-300 ring-2 ring-gray-100"
-              : "border-gray-100/80 hover:border-gray-200"
-          }`}
-        >
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
-            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[9px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider truncate">
-              <span className="sm:hidden">No Phone</span>
-              <span className="hidden sm:inline">No Phone on File</span>
-            </p>
-            <p className="text-lg sm:text-2xl font-black text-gray-900 leading-tight">
-              {noPhoneCount}
             </p>
           </div>
         </div>
@@ -335,8 +309,8 @@ export default function WhatsAppRemindersView({
                                 {m.phone}
                               </span>
                             ) : (
-                              <span className="text-xs text-red-500 font-semibold bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
-                                No phone on file
+                              <span className="text-xs text-gray-400 font-medium">
+                                —
                               </span>
                             )}
                           </td>
@@ -422,11 +396,11 @@ export default function WhatsAppRemindersView({
                             className={
                               m.hasValidPhone
                                 ? "font-medium text-gray-700 truncate text-[11px]"
-                                : "text-red-500 font-semibold italic text-[10px] truncate"
+                                : "text-gray-400 font-medium text-[11px] truncate"
                             }
-                            title={m.phone || "No phone on file"}
+                            title={m.phone || ""}
                           >
-                            {m.phone || "No phone on file"}
+                            {m.phone || "—"}
                           </span>
                         </div>
 
@@ -536,8 +510,8 @@ export default function WhatsAppRemindersView({
                                 {m.phone}
                               </span>
                             ) : (
-                              <span className="text-xs text-red-500 font-semibold bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
-                                No phone on file
+                              <span className="text-xs text-gray-400 font-medium">
+                                —
                               </span>
                             )}
                           </td>
@@ -595,11 +569,11 @@ export default function WhatsAppRemindersView({
                             className={
                               m.hasValidPhone
                                 ? "font-medium text-gray-700 truncate text-[11px]"
-                                : "text-red-500 font-semibold italic text-[10px] truncate"
+                                : "text-gray-400 font-medium text-[11px] truncate"
                             }
-                            title={m.phone || "No phone on file"}
+                            title={m.phone || ""}
                           >
-                            {m.phone || "No phone on file"}
+                            {m.phone || "—"}
                           </span>
                         </div>
 

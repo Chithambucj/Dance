@@ -110,7 +110,7 @@ export default function WhatsAppReminderButton({
           `}
         >
           <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-          <span className="whitespace-nowrap">No Phone on File</span>
+          <span className="whitespace-nowrap">No Phone</span>
         </button>
       </div>
     );
