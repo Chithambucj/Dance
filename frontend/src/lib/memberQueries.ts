@@ -102,3 +102,94 @@ export const PAID_MEMBERSHIP_WHERE = {
     { NOT: ALL_PENDING_WHERE },
   ],
 };
+
+export function getExpiredPaidMemberWhere(now = new Date()) {
+  return {
+    AND: [
+      IS_PAID_MEMBER_WHERE,
+      {
+        OR: [
+          { membershipStatus: "EXPIRED" },
+          {
+            memberships: {
+              some: { expiryDate: { lt: now } },
+              none: { expiryDate: { gte: now }, status: "ACTIVE" },
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function getActivePaidMemberWhere(now = new Date()) {
+  return {
+    AND: [
+      IS_PAID_MEMBER_WHERE,
+      {
+        memberships: {
+          some: {
+            status: "ACTIVE",
+            pendingAmount: 0,
+            expiryDate: { gte: now },
+          },
+        },
+      },
+      { NOT: ALL_PENDING_WHERE },
+    ],
+  };
+}
+
+export function getOverduePaidMemberWhere(now = new Date()) {
+  return {
+    AND: [
+      IS_PAID_MEMBER_WHERE,
+      {
+        memberships: {
+          some: {
+            expiryDate: { gte: now },
+          },
+        },
+      },
+      {
+        payments: {
+          some: {
+            amount: { gt: 0 },
+            OR: [
+              { status: "OVERDUE" },
+              { status: "PENDING", dueDate: { lt: now } },
+            ],
+          },
+        },
+      },
+    ],
+  };
+}
+
+export function getPendingPaidMemberWhere(now = new Date()) {
+  return {
+    AND: [
+      IS_PAID_MEMBER_WHERE,
+      {
+        memberships: {
+          some: {
+            expiryDate: { gte: now },
+          },
+        },
+      },
+      {
+        payments: {
+          some: {
+            status: "PENDING",
+            amount: { gt: 0 },
+            OR: [
+              { dueDate: null },
+              { dueDate: { gte: now } },
+            ],
+          },
+        },
+      },
+    ],
+  };
+}
+

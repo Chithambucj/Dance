@@ -57,7 +57,7 @@ function StatCard({ label, value, sub, icon: Icon, color }: {
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; filter?: string }>;
+  searchParams: Promise<{ tab?: string; filter?: string; memberType?: string; payment?: string }>;
 }) {
   await requireAuth(["ADMIN"]);
   const params = await searchParams;
@@ -145,7 +145,11 @@ export default async function AdminDashboardPage({
           </div>
         </div>
 
-        <MemberManagementTable initialCounts={initialCounts} />
+        <MemberManagementTable
+          initialCounts={initialCounts}
+          initialMemberType={params.memberType}
+          initialPayment={params.payment}
+        />
       </div>
     );
   }

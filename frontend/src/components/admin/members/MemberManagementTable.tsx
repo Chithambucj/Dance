@@ -68,6 +68,7 @@ export interface MemberRowComputed {
   isTrial: boolean;
   isTrialExpired: boolean;
   isExpiredFreeTrial: boolean;
+  isMembershipExpired: boolean;
   hasOutstandingFees: boolean;
   totalOutstanding: number;
   currentFeeAmount: number;
@@ -184,7 +185,23 @@ export function computeMemberRowData(member: any): MemberRowComputed {
     displayPlanName = `${member.enrollments[0].batch.classStyle.name} Plan`;
   }
 
-  // 6. Due Date / Renewal Date Calculation
+  // 6. Membership Expiry Check for Paid Members
+  const hasActiveFutureMembership = member.memberships?.some(
+    (m: any) => m.expiryDate && new Date(m.expiryDate) >= now
+  );
+
+  let isMembershipExpired = false;
+  if (isPaidMember) {
+    if (latestMembership?.expiryDate) {
+      isMembershipExpired = new Date(latestMembership.expiryDate) < now && !hasActiveFutureMembership;
+    } else if (latestCompletedPayment?.createdAt) {
+      const paymentDate = new Date(latestCompletedPayment.createdAt);
+      const inferredExpiry = new Date(paymentDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      isMembershipExpired = inferredExpiry < now;
+    }
+  }
+
+  // 7. Due Date / Renewal Date Calculation
   let dueDateText = "—";
   let dueDateSubtext: string | undefined = undefined;
   let rawDueDate: Date | null = null;
@@ -198,6 +215,23 @@ export function computeMemberRowData(member: any): MemberRowComputed {
         month: "short",
         year: "numeric",
       });
+    }
+  } else if (isMembershipExpired) {
+    // For expired members, display their membership expiry date
+    const targetDate = latestMembership?.expiryDate
+      ? new Date(latestMembership.expiryDate)
+      : (latestCompletedPayment ? new Date(new Date(latestCompletedPayment.createdAt).getTime() + 30 * 86400000) : null);
+
+    if (targetDate) {
+      rawDueDate = targetDate;
+      dueDateText = targetDate.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      if (pendingPayments.length > 0) {
+        dueDateSubtext = `${pendingPayments.length} Renewal Invoice${pendingPayments.length > 1 ? "s" : ""}`;
+      }
     }
   } else if (pendingPayments.length > 0) {
     // Sort by dueDate ascending so earliest due date is shown
@@ -238,11 +272,12 @@ export function computeMemberRowData(member: any): MemberRowComputed {
     }
   }
 
-  // 7. Payment Status Calculation
-  // CRITICAL REQUIREMENT 1:
-  // - Free Trial members must never be marked as OVERDUE for membership fees.
-  // - Free Trial fee amount must remain ₹0.
-  // - When a Free Trial period expires, show the status as EXPIRED.
+  // 8. Payment Status Calculation
+  // Requirements:
+  // - PAID: payment is complete and membership is currently active.
+  // - OVERDUE: payment is pending and its due date has passed, while the membership is not expired.
+  // - EXPIRED: membership end date has passed.
+  // - PENDING: payment is not yet due or is awaiting payment, as supported by existing data model.
   let paymentStatus: "PAID" | "ACTIVE" | "PENDING" | "OVERDUE" | "EXPIRED" | "REGISTERED" = "ACTIVE";
   let paymentBadgeClass = "bg-green-50 text-green-700 border-green-100";
 
@@ -254,28 +289,28 @@ export function computeMemberRowData(member: any): MemberRowComputed {
       paymentStatus = "ACTIVE";
       paymentBadgeClass = "bg-blue-50 text-blue-700 border-blue-100";
     }
-  } else if (pendingPayments.length > 0) {
-    // Unpaid invoices exist for a paid member
-    const hasOverdueInvoice = pendingPayments.some((p: any) => {
-      if (p.status === "OVERDUE") return true;
-      if (p.dueDate && new Date(p.dueDate) < now) return true;
-      return false;
-    });
-
-    if (hasOverdueInvoice) {
-      paymentStatus = "OVERDUE";
-      paymentBadgeClass = "bg-red-50 text-red-700 border-red-100";
-    } else {
-      paymentStatus = "PENDING";
-      paymentBadgeClass = "bg-orange-50 text-orange-700 border-orange-100";
-    }
   } else if (isPaidMember) {
-    // Paid member with 0 unpaid invoices
-    const isMembershipExpired = activeMembership?.expiryDate && new Date(activeMembership.expiryDate) < now;
     if (isMembershipExpired) {
+      // EXPIRED — the membership end date has passed
       paymentStatus = "EXPIRED";
       paymentBadgeClass = "bg-red-50 text-red-700 border-red-100";
+    } else if (pendingPayments.length > 0) {
+      // Unpaid invoices exist for a currently active paid member
+      const hasOverdueInvoice = pendingPayments.some((p: any) => {
+        if (p.status === "OVERDUE") return true;
+        if (p.dueDate && new Date(p.dueDate) < now) return true;
+        return false;
+      });
+
+      if (hasOverdueInvoice) {
+        paymentStatus = "OVERDUE";
+        paymentBadgeClass = "bg-red-50 text-red-700 border-red-100";
+      } else {
+        paymentStatus = "PENDING";
+        paymentBadgeClass = "bg-orange-50 text-orange-700 border-orange-100";
+      }
     } else {
+      // PAID — payment is complete and membership is currently active
       paymentStatus = "PAID";
       paymentBadgeClass = "bg-green-50 text-green-700 border-green-100";
     }
@@ -291,6 +326,7 @@ export function computeMemberRowData(member: any): MemberRowComputed {
     isTrial,
     isTrialExpired,
     isExpiredFreeTrial,
+    isMembershipExpired,
     hasOutstandingFees,
     totalOutstanding: pendingDue,
     currentFeeAmount,
@@ -316,9 +352,15 @@ interface MemberManagementTableProps {
     outstandingCount?: number;
     outstandingAmount?: number;
   };
+  initialMemberType?: string;
+  initialPayment?: string;
 }
 
-export default function MemberManagementTable({ initialCounts }: MemberManagementTableProps) {
+export default function MemberManagementTable({
+  initialCounts,
+  initialMemberType,
+  initialPayment,
+}: MemberManagementTableProps) {
   const [members, setMembers] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -342,10 +384,10 @@ export default function MemberManagementTable({ initialCounts }: MemberManagemen
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
-  const [memberType, setMemberType] = useState("ALL");
+  const [memberType, setMemberType] = useState(initialMemberType || "ALL");
   const [status, setStatus] = useState("ALL");
   const [batch, setBatch] = useState("ALL");
-  const [payment, setPayment] = useState("ALL");
+  const [payment, setPayment] = useState(initialPayment || "ALL");
   const [sort, setSort] = useState("date_desc");
 
   // Filter options
@@ -586,10 +628,13 @@ export default function MemberManagementTable({ initialCounts }: MemberManagemen
               onChange={(e) => setPayment(e.target.value)}
             >
               <option value="ALL">Payment Status</option>
+              <option value="PAID">Paid</option>
+              <option value="OVERDUE">Overdue</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="PENDING">Pending</option>
+              <option value="ALL_PENDING">All Pending</option>
               <option value="CURRENT_PENDING">Current Pending</option>
               <option value="OLD_PENDING">Old Pending</option>
-              <option value="ALL_PENDING">All Pending</option>
-              <option value="PAID">Paid</option>
             </select>
             <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -754,7 +799,22 @@ export default function MemberManagementTable({ initialCounts }: MemberManagemen
 
                       <td className="px-6 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {c.hasOutstandingFees && (
+                          {/* 1. Paid Member with Expired Membership */}
+                          {c.isPaidMember && c.isMembershipExpired && (
+                            <WhatsAppReminderAction
+                              clientId={member.id}
+                              clientName={`${member.firstName} ${member.lastName}`}
+                              phone={member.phone}
+                              type="membership_expired"
+                              totalOutstanding={c.totalOutstanding}
+                              invoices={c.pendingInvoices}
+                              planName={c.displayPlanName}
+                              renewalPrice={c.currentFeeAmount}
+                              expiryDate={c.rawDueDate}
+                            />
+                          )}
+                          {/* 2. Paid Member with Active Membership & Outstanding Fees */}
+                          {c.isPaidMember && !c.isMembershipExpired && c.hasOutstandingFees && (
                             <WhatsAppReminderAction
                               clientId={member.id}
                               clientName={`${member.firstName} ${member.lastName}`}
@@ -762,8 +822,12 @@ export default function MemberManagementTable({ initialCounts }: MemberManagemen
                               type="payment"
                               totalOutstanding={c.totalOutstanding}
                               invoices={c.pendingInvoices}
+                              planName={c.displayPlanName}
+                              renewalPrice={c.currentFeeAmount}
+                              expiryDate={c.rawDueDate}
                             />
                           )}
+                          {/* 3. Expired Free Trial Member */}
                           {c.isExpiredFreeTrial && (
                             <WhatsAppReminderAction
                               clientId={member.id}
@@ -904,8 +968,26 @@ export default function MemberManagementTable({ initialCounts }: MemberManagemen
 
                   {/* Action Buttons Row */}
                   <div className="flex items-center gap-2 pt-1 border-t border-gray-100/80">
+                    {/* WhatsApp Action (Membership Expired) */}
+                    {c.isPaidMember && c.isMembershipExpired && (
+                      <div className="flex-1 min-w-0">
+                        <WhatsAppReminderAction
+                          clientId={member.id}
+                          clientName={`${member.firstName} ${member.lastName}`}
+                          phone={member.phone}
+                          type="membership_expired"
+                          totalOutstanding={c.totalOutstanding}
+                          invoices={c.pendingInvoices}
+                          planName={c.displayPlanName}
+                          renewalPrice={c.currentFeeAmount}
+                          expiryDate={c.rawDueDate}
+                          className="w-full h-10 text-xs font-bold justify-center rounded-xl"
+                        />
+                      </div>
+                    )}
+
                     {/* WhatsApp Action (Payment Reminder) */}
-                    {c.hasOutstandingFees && (
+                    {c.isPaidMember && !c.isMembershipExpired && c.hasOutstandingFees && (
                       <div className="flex-1 min-w-0">
                         <WhatsAppReminderAction
                           clientId={member.id}
@@ -914,6 +996,9 @@ export default function MemberManagementTable({ initialCounts }: MemberManagemen
                           type="payment"
                           totalOutstanding={c.totalOutstanding}
                           invoices={c.pendingInvoices}
+                          planName={c.displayPlanName}
+                          renewalPrice={c.currentFeeAmount}
+                          expiryDate={c.rawDueDate}
                           className="w-full h-10 text-xs font-bold justify-center rounded-xl"
                         />
                       </div>

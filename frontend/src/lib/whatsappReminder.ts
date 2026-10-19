@@ -99,6 +99,60 @@ export function buildExpiredTrialReminderMessage({
   return `Hi ${cleanName}! 😊 Hope you enjoyed your free trial at ${studioName}! 💃 We'd love to welcome you to our regular dance classes. Let us know if you'd like to explore our membership plans. Hope to see you dancing with us again! 🎶`;
 }
 
+export function buildExpiredMembershipReminderMessage({
+  memberName,
+  planName = "Dance Class Membership",
+  expiryDate,
+  renewalPrice = 0,
+  totalOutstanding = 0,
+  studioName = "StepUp Dance Studio",
+}: {
+  memberName: string;
+  planName?: string;
+  expiryDate?: Date | string | null;
+  renewalPrice?: number;
+  totalOutstanding?: number;
+  studioName?: string;
+}): string {
+  const cleanName = memberName.trim() || "there";
+  const formattedExpiry = expiryDate
+    ? new Date(expiryDate).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "recently";
+
+  // If there is an outstanding amount, mention it clearly
+  if (totalOutstanding > 0) {
+    return (
+      `Hello ${cleanName},\n\n` +
+      `This is a gentle reminder from ${studioName}.\n\n` +
+      `Your ${planName} membership expired on ${formattedExpiry}.\n\n` +
+      `📋 Renewal Fee Details:\n` +
+      `• Plan: ${planName}\n` +
+      `• Outstanding Amount: ₹${formatIndianCurrency(totalOutstanding)}\n\n` +
+      `Please complete your renewal payment at your earliest convenience to continue your dance classes without interruption.\n\n` +
+      `Thank you! 🙏`
+    );
+  }
+
+  // If outstanding amount is 0, DO NOT display ₹0 as an outstanding balance
+  const priceLine = renewalPrice > 0 ? `• Renewal Fee: ₹${formatIndianCurrency(renewalPrice)}\n` : "";
+
+  return (
+    `Hello ${cleanName},\n\n` +
+    `This is a friendly reminder from ${studioName}.\n\n` +
+    `Your ${planName} membership expired on ${formattedExpiry}.\n\n` +
+    `📋 Membership Renewal:\n` +
+    `• Plan: ${planName}\n` +
+    priceLine +
+    `\nWe would love to see you continue dancing with us! Please visit the studio or contact us to renew your membership.\n\n` +
+    `Thank you! 🙏`
+  );
+}
+
+
 export function getWhatsAppUrl({
   phone,
   message,

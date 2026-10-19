@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   buildWhatsAppReminderMessage,
   buildExpiredTrialReminderMessage,
+  buildExpiredMembershipReminderMessage,
   getWhatsAppUrl,
   isValidPhone,
   PendingInvoiceDetail,
@@ -15,9 +16,12 @@ interface WhatsAppReminderActionProps {
   clientId: string;
   clientName: string;
   phone?: string | null;
-  type?: "payment" | "trial_followup";
+  type?: "payment" | "trial_followup" | "membership_expired";
   totalOutstanding?: number;
   invoices?: PendingInvoiceDetail[];
+  planName?: string;
+  renewalPrice?: number;
+  expiryDate?: Date | string | null;
   className?: string;
 }
 
@@ -28,6 +32,9 @@ export default function WhatsAppReminderAction({
   type = "payment",
   totalOutstanding = 0,
   invoices = [],
+  planName = "Monthly Plan",
+  renewalPrice = 0,
+  expiryDate = null,
   className = "",
 }: WhatsAppReminderActionProps) {
   const hasValidPhone = isValidPhone(phone);
@@ -37,33 +44,26 @@ export default function WhatsAppReminderAction({
     return null;
   }
 
-  // If no valid phone on file, show a disabled action with a clear explanation
+  // If no valid phone on file, do not display button
   if (!hasValidPhone || !phone) {
-    return (
-      <button
-        type="button"
-        disabled
-        aria-disabled="true"
-        data-action="whatsapp-reminder"
-        data-reminder-type={type}
-        data-client-id={clientId}
-        title="No valid registered phone number on file for this member. Please add a phone number in their profile to enable WhatsApp reminders."
-        className={cn(
-          "inline-flex items-center justify-center gap-1.5 text-xs font-bold px-2.5 py-1.5 h-8 rounded-lg bg-gray-100 text-gray-400 border border-gray-200/80 cursor-not-allowed shadow-xs shrink-0 select-none",
-          className
-        )}
-      >
-        <MessageCircle className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-        <span className="whitespace-nowrap">No Phone</span>
-      </button>
-    );
+    return null;
   }
 
   const isTrial = type === "trial_followup";
+  const isMembershipExpired = type === "membership_expired";
 
   const message = isTrial
     ? buildExpiredTrialReminderMessage({
         memberName: clientName,
+        studioName: "StepUp Dance Studio",
+      })
+    : isMembershipExpired
+    ? buildExpiredMembershipReminderMessage({
+        memberName: clientName,
+        planName,
+        expiryDate,
+        renewalPrice,
+        totalOutstanding,
         studioName: "StepUp Dance Studio",
       })
     : buildWhatsAppReminderMessage({
@@ -82,6 +82,7 @@ export default function WhatsAppReminderAction({
       phone,
       pendingAmount: isTrial ? 0 : totalOutstanding,
       customMessage: message,
+      type,
     }).catch((err) => {
       console.warn("Could not record WhatsApp reminder interaction:", err);
     });
@@ -89,10 +90,14 @@ export default function WhatsAppReminderAction({
 
   const actionTitle = isTrial
     ? `Send WhatsApp Dance Class Invitation to ${clientName} (${phone})`
+    : isMembershipExpired
+    ? `Send WhatsApp Renewal Reminder to ${clientName} (${phone})`
     : `Send WhatsApp Payment Reminder to ${clientName} (${phone})`;
 
   const ariaLabel = isTrial
     ? `Send WhatsApp invitation to ${clientName}`
+    : isMembershipExpired
+    ? `Send WhatsApp renewal reminder to ${clientName}`
     : `Send WhatsApp payment reminder to ${clientName}`;
 
   return (

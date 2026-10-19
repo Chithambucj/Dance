@@ -25,7 +25,7 @@ export async function recordWhatsAppReminder({
   membershipId?: string;
   studioName?: string;
   customMessage?: string;
-  type?: "payment" | "trial_followup";
+  type?: "payment" | "trial_followup" | "membership_expired";
 }) {
   await requireAuth(["ADMIN"]);
 
@@ -39,6 +39,8 @@ export async function recordWhatsAppReminder({
     customMessage ||
     (type === "trial_followup"
       ? `Hi ${name}! 😊 Hope you enjoyed your free trial at ${studioName}! 💃 We'd love to have you join our regular dance classes. Feel free to contact us if you'd like to explore our membership plans. Hope to see you dancing with us again! 🎶`
+      : type === "membership_expired"
+      ? `Hello ${name},\n\nThis is a friendly reminder from ${studioName}.\n\nYour dance membership has expired. Please contact or visit the studio to renew your membership and continue your dance classes without interruption.\n\nThank you! 🙏`
       : `Hello ${name},\n\nThis is a gentle payment reminder from ${studioName}.\n\nYour outstanding fee of ₹${(pendingAmount || 0).toLocaleString("en-IN")} is pending. Please complete the payment at your earliest convenience to continue your dance classes without interruption.\n\nThank you! 🙏`);
 
   try {

@@ -40,14 +40,16 @@ export async function POST(request: NextRequest) {
 
       // Check if it's expired
       if (new Date(activeMembership.expiryDate) < new Date()) {
-        // Check if there's already a pending payment for this exact membership that acts as the renewal
+        // Prevent duplicate renewal invoices: check if there's any pending or overdue payment for this member
         const existingPending = await prisma.payment.findFirst({
           where: {
             userId: member.id,
-            membershipId: activeMembership.id,
             status: { in: ["PENDING", "OVERDUE"] },
-            // To ensure we don't duplicate, check if a payment was created recently for this renewal
-            createdAt: { gte: activeMembership.expiryDate },
+            OR: [
+              { membershipId: activeMembership.id },
+              { planId: activeMembership.planId },
+              { description: { contains: "Renewal", mode: "insensitive" } },
+            ],
           },
         });
 

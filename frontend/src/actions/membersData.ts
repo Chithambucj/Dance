@@ -16,7 +16,12 @@ import {
   CURRENT_PENDING_WHERE,
   OLD_PENDING_WHERE,
   PAID_MEMBERSHIP_WHERE,
+  getExpiredPaidMemberWhere,
+  getActivePaidMemberWhere,
+  getOverduePaidMemberWhere,
+  getPendingPaidMemberWhere,
 } from "@/lib/memberQueries";
+import { syncMembershipExpiries } from "@/lib/membershipExpiry";
 
 // ── getPaginatedMembers ────────────────────────────────────────────────────────
 
@@ -35,6 +40,9 @@ export async function getPaginatedMembers(params: {
   const { page, limit, search, status, batch, payment, memberType, sortBy } = params;
   const skip = (page - 1) * limit;
   const now = new Date();
+
+  // Ensure expiries are synced with database
+  await syncMembershipExpiries(now);
 
   const whereConditions: any[] = [{ role: "MEMBER" }];
 
@@ -74,7 +82,7 @@ export async function getPaginatedMembers(params: {
     });
   }
 
-  // Payment status filter — uses dual-source conditions
+  // Payment status filter
   if (payment === "ALL_PENDING") {
     whereConditions.push(ALL_PENDING_WHERE);
   } else if (payment === "CURRENT_PENDING") {
@@ -82,7 +90,13 @@ export async function getPaginatedMembers(params: {
   } else if (payment === "OLD_PENDING") {
     whereConditions.push(OLD_PENDING_WHERE);
   } else if (payment === "PAID") {
-    whereConditions.push(PAID_MEMBERSHIP_WHERE);
+    whereConditions.push(getActivePaidMemberWhere(now));
+  } else if (payment === "EXPIRED") {
+    whereConditions.push(getExpiredPaidMemberWhere(now));
+  } else if (payment === "OVERDUE") {
+    whereConditions.push(getOverduePaidMemberWhere(now));
+  } else if (payment === "PENDING") {
+    whereConditions.push(getPendingPaidMemberWhere(now));
   }
 
   const where: any = { AND: whereConditions };
@@ -148,6 +162,9 @@ export async function getActiveBatchesList() {
 export async function getMemberCounts() {
   await requireAuth(["ADMIN"]);
   const now = new Date();
+
+  // Sync any expired memberships before aggregating
+  await syncMembershipExpiries(now);
 
   const [
     total,
