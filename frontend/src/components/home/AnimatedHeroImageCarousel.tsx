@@ -271,8 +271,8 @@ export default function AnimatedHeroImageCarousel() {
                   ${stackClass}
                   ${
                     isFront
-                      ? "border-4 border-[#FF1E82] shadow-[0_18px_38px_-10px_rgba(255,30,130,0.45),0_8px_16px_rgba(18,16,32,0.18)] ring-2 sm:ring-4 ring-[#7928CA]/30"
-                      : "border-4 border-white shadow-[0_14px_28px_-6px_rgba(18,16,32,0.22)] hover:opacity-100 hover:scale-[1.02]"
+                      ? "border-4 border-[#FF1E82] dark:border-[#FF4D8D] shadow-[0_18px_38px_-10px_rgba(255,30,130,0.45),0_8px_16px_rgba(18,16,32,0.18)] ring-2 sm:ring-4 ring-[#7928CA]/30 dark:ring-[#9B7BFF]/30"
+                      : "border-4 border-white dark:border-[#39364F] shadow-[0_14px_28px_-6px_rgba(18,16,32,0.22)] hover:opacity-100 hover:scale-[1.02]"
                   }
                 `}
                 style={{
@@ -297,7 +297,7 @@ export default function AnimatedHeroImageCarousel() {
 
                   {/* Micro Category Pill at bottom of card */}
                   <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3 flex items-center justify-between pointer-events-none z-10">
-                    <span className="bg-white/95 text-[#121020] border border-[#121020]/20 text-[9px] xs:text-[10px] min-[390px]:text-[11px] sm:text-[11px] font-black uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm">
+                    <span className="bg-white/95 dark:bg-[#211F35]/95 text-[#121020] dark:text-white border border-[#121020]/20 dark:border-[#39364F] text-[9px] xs:text-[10px] min-[390px]:text-[11px] sm:text-[11px] font-black uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm">
                       {img.category}
                     </span>
                     <span className="text-[9px] xs:text-[10px] min-[390px]:text-[10.5px] sm:text-[10px] font-extrabold text-white/90 uppercase tracking-widest hidden xs:inline drop-shadow-sm">
@@ -324,18 +324,18 @@ export default function AnimatedHeroImageCarousel() {
 
         {/* Floating Free-Trial Pass Badge (desktop only to prevent clutter on mobile) */}
         <div 
-          className="absolute -bottom-3 left-1 sm:-bottom-4 sm:left-4 z-40 bg-white border-2 border-[#121020] rounded-2xl p-2 sm:p-2.5 shadow-[3px_3px_0px_#121020] sm:shadow-[4px_4px_0px_#121020] items-center gap-2.5 sm:gap-3 animate-float-slow hover:scale-105 transition-all hidden lg:flex"
+          className="absolute -bottom-3 left-1 sm:-bottom-4 sm:left-4 z-40 bg-white dark:bg-[#211F35] border-2 border-[#121020] dark:border-[#39364F] rounded-2xl p-2 sm:p-2.5 shadow-[3px_3px_0px_#121020] sm:shadow-[4px_4px_0px_#121020] dark:shadow-[3px_3px_0px_#000000] sm:dark:shadow-[4px_4px_0px_#000000] items-center gap-2.5 sm:gap-3 animate-float-slow hover:scale-105 transition-all hidden lg:flex"
           style={{ "--badge-rotate": "1deg" } as React.CSSProperties}
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FF1E82] text-white flex items-center justify-center font-black text-xs border border-[#121020] shrink-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FF1E82] dark:bg-[#FF4D8D] text-white flex items-center justify-center font-black text-xs border border-[#121020] dark:border-[#39364F] shrink-0">
             20+
           </div>
           <div className="text-left pr-1 sm:pr-2">
-            <p className="text-[11px] sm:text-xs font-black text-[#121020] leading-tight">Free Trial Classes</p>
-            <p className="text-[9px] sm:text-[10px] font-bold text-[#FF1E82] uppercase tracking-wide">Available Weekly</p>
+            <p className="text-[11px] sm:text-xs font-black text-[#121020] dark:text-white leading-tight">Free Trial Classes</p>
+            <p className="text-[9px] sm:text-[10px] font-bold text-[#FF1E82] dark:text-[#FF4D8D] uppercase tracking-wide">Available Weekly</p>
           </div>
-          <div className="hidden sm:flex flex-col gap-0.5 border-l border-dashed border-[#121020]/30 pl-2">
-            <div className="w-6 h-6 flex items-center justify-center text-[8px] font-mono font-bold tracking-tighter text-[#121020]/60">
+          <div className="hidden sm:flex flex-col gap-0.5 border-l border-dashed border-[#121020]/30 dark:border-white/20 pl-2">
+            <div className="w-6 h-6 flex items-center justify-center text-[8px] font-mono font-bold tracking-tighter text-[#121020]/60 dark:text-white/60">
               |||||||
             </div>
           </div>
@@ -362,8 +362,8 @@ export default function AnimatedHeroImageCarousel() {
                   rounded-full transition-all duration-300 ease-out
                   ${
                     isActive
-                      ? "w-6 h-2 xs:w-7 xs:h-2.5 min-[390px]:w-8 min-[390px]:h-2.5 sm:w-8 sm:h-3 bg-[#FF1E82] shadow-[0_2px_8px_rgba(255,30,130,0.5)] border border-[#121020]"
-                      : "w-2 h-2 xs:w-2.5 xs:h-2.5 min-[390px]:w-2.5 min-[390px]:h-2.5 sm:w-3 sm:h-3 bg-[#FCE7F3] border border-[#121020]/20 hover:bg-[#FFD1E6]"
+                      ? "w-6 h-2 xs:w-7 xs:h-2.5 min-[390px]:w-8 min-[390px]:h-2.5 sm:w-8 sm:h-3 bg-[#FF1E82] dark:bg-[#FF4D8D] shadow-[0_2px_8px_rgba(255,30,130,0.5)] border border-[#121020] dark:border-[#39364F]"
+                      : "w-2 h-2 xs:w-2.5 xs:h-2.5 min-[390px]:w-2.5 min-[390px]:h-2.5 sm:w-3 sm:h-3 bg-[#FCE7F3] dark:bg-[#211F35] border border-[#121020]/20 dark:border-[#39364F] hover:bg-[#FFD1E6] dark:hover:bg-[#39364F]"
                   }
                 `}
               />

@@ -63,6 +63,43 @@
   --radius: 1.25rem;
 }
 
+.dark {
+  --background: #11101D;
+  --foreground: #FFFFFF;
+  --card: #211F35;
+  --card-foreground: #FFFFFF;
+  --popover: #211F35;
+  --popover-foreground: #FFFFFF;
+  --primary: #FF4D8D;
+  --primary-foreground: #FFFFFF;
+  --secondary: #181729;
+  --secondary-foreground: #FFFFFF;
+  --muted: #181729;
+  --muted-foreground: #C4C1D6;
+  --accent: #211F35;
+  --accent-foreground: #FFFFFF;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #39364F;
+  --input: #39364F;
+  --ring: #FF4D8D;
+
+  /* StepUp Dark Brand Moodboard Tokens */
+  --color-dance-yellow: #FFD84D;
+  --color-dance-yellow-light: #2A2616;
+  --color-dance-pink: #FF4D8D;
+  --color-dance-pink-light: #331A26;
+  --color-dance-purple: #9B7BFF;
+  --color-dance-purple-light: #261F38;
+  --color-dance-purple-dark: #120E22;
+  --color-dance-orange: #FF7E36;
+  --color-dance-orange-light: #331F15;
+  --color-dance-cyan: #26D0F0;
+  --color-dance-cyan-light: #142830;
+  --color-dance-dark: #FFFFFF;
+  --color-dance-cream: #11101D;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -90,29 +127,50 @@
 .sticker-shadow-dark {
   box-shadow: 4px 5px 0px #121020;
 }
+.dark .sticker-shadow-dark {
+  box-shadow: 4px 5px 0px #000000;
+}
 
 .sticker-shadow-pink {
   box-shadow: 4px 5px 0px #FF1E82;
+}
+.dark .sticker-shadow-pink {
+  box-shadow: 4px 5px 0px #FF4D8D;
 }
 
 .sticker-shadow-yellow {
   box-shadow: 4px 5px 0px #FFD200;
 }
+.dark .sticker-shadow-yellow {
+  box-shadow: 4px 5px 0px #FFD84D;
+}
 
 .sticker-shadow-purple {
   box-shadow: 4px 5px 0px #7928CA;
+}
+.dark .sticker-shadow-purple {
+  box-shadow: 4px 5px 0px #9B7BFF;
 }
 
 .glow-pink {
   box-shadow: 0 12px 36px -6px rgba(255, 30, 130, 0.35);
 }
+.dark .glow-pink {
+  box-shadow: 0 12px 36px -6px rgba(255, 77, 141, 0.4);
+}
 
 .glow-purple {
   box-shadow: 0 12px 36px -6px rgba(121, 40, 202, 0.35);
 }
+.dark .glow-purple {
+  box-shadow: 0 12px 36px -6px rgba(155, 123, 255, 0.4);
+}
 
 .glow-yellow {
   box-shadow: 0 12px 36px -6px rgba(255, 210, 0, 0.35);
+}
+.dark .glow-yellow {
+  box-shadow: 0 12px 36px -6px rgba(255, 216, 77, 0.4);
 }
 
 /* Groovy concentric wave background inspired by Dance Zone reference */
@@ -120,10 +178,18 @@
   background-image: radial-gradient(circle at 50% 50%, rgba(255, 30, 130, 0.08) 0%, transparent 50%),
     repeating-radial-gradient(circle at 100% 0%, transparent 0, transparent 20px, rgba(255, 210, 0, 0.07) 21px, transparent 22px, transparent 40px);
 }
+.dark .bg-groovy-waves {
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 77, 141, 0.12) 0%, transparent 50%),
+    repeating-radial-gradient(circle at 100% 0%, transparent 0, transparent 20px, rgba(255, 216, 77, 0.08) 21px, transparent 22px, transparent 40px);
+}
 
 /* Playful polka dots */
 .bg-dance-dots {
   background-image: radial-gradient(rgba(18, 16, 32, 0.07) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+.dark .bg-dance-dots {
+  background-image: radial-gradient(rgba(196, 193, 214, 0.12) 1.5px, transparent 1.5px);
   background-size: 24px 24px;
 }
 

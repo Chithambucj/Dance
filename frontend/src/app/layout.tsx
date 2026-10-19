@@ -5,6 +5,7 @@ import AnimatedCursor from "@/components/AnimatedCursor";
 import InitialAppLoader from "@/components/InitialAppLoader";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
 import DashboardLoadingManager from "@/components/DashboardLoadingManager";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,15 +38,26 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${caveat.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <NavigationProgressBar />
-        <InitialAppLoader />
-        <DashboardLoadingManager />
-        <AnimatedCursor />
-        {children}
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem("stepup-theme");var d=s==="dark"||(!s&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d){document.documentElement.classList.add("dark");}else{document.documentElement.classList.remove("dark");}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-200">
+        <ThemeProvider>
+          <NavigationProgressBar />
+          <InitialAppLoader />
+          <DashboardLoadingManager />
+          <AnimatedCursor />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+

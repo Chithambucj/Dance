@@ -144,10 +144,10 @@ export default function MobileInstructorsCarousel() {
             <div
               key={idx}
               data-instructor-card
-              className="w-[74vw] max-w-[280px] shrink-0 snap-start bg-white rounded-[28px] p-5 border-2 border-[#121020] shadow-[5px_5px_0px_#121020] flex flex-col items-center text-center transition-all relative"
+              className="w-[74vw] max-w-[280px] shrink-0 snap-start bg-white dark:bg-[#211F35] rounded-[28px] p-5 border-2 border-[#121020] dark:border-[#39364F] shadow-[5px_5px_0px_#121020] dark:shadow-[5px_5px_0px_#000000] flex flex-col items-center text-center transition-all relative"
             >
               <div
-                className="w-36 h-36 rounded-full overflow-hidden mb-4 border-3 border-[#121020] shadow-[3px_3px_0px_#121020] relative shrink-0"
+                className="w-36 h-36 rounded-full overflow-hidden mb-4 border-3 border-[#121020] dark:border-[#39364F] shadow-[3px_3px_0px_#121020] dark:shadow-[3px_3px_0px_#000000] relative shrink-0"
                 style={{ backgroundColor: instructor.color }}
               >
                 <div
@@ -155,9 +155,9 @@ export default function MobileInstructorsCarousel() {
                   style={{ backgroundImage: `url('${instructor.img}')` }}
                 />
               </div>
-              <h3 className="text-lg font-black text-[#121020] mb-1">{instructor.name}</h3>
+              <h3 className="text-lg font-black text-[#121020] dark:text-white mb-1">{instructor.name}</h3>
               <span
-                className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full border-2 border-[#121020] text-[#121020] mb-3 shadow-[1.5px_1.5px_0px_#121020]"
+                className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full border-2 border-[#121020] dark:border-[#39364F] text-[#121020] dark:text-white mb-3 shadow-[1.5px_1.5px_0px_#121020] dark:shadow-[1.5px_1.5px_0px_#000000] dark:!bg-[#181729]"
                 style={{ backgroundColor: instructor.bg }}
               >
                 {instructor.role}
@@ -165,7 +165,7 @@ export default function MobileInstructorsCarousel() {
               <a
                 href="#"
                 aria-label={`Share ${instructor.name}'s profile`}
-                className="w-11 h-11 rounded-full bg-white border-2 border-[#121020] flex items-center justify-center text-[#121020] hover:bg-[#FFD200] shadow-[2px_2px_0px_#121020] transition-colors"
+                className="w-11 h-11 rounded-full bg-white dark:bg-[#181729] border-2 border-[#121020] dark:border-[#39364F] flex items-center justify-center text-[#121020] dark:text-white hover:bg-[#FFD200] dark:hover:bg-[#FFD84D] dark:hover:text-[#121020] shadow-[2px_2px_0px_#121020] dark:shadow-[2px_2px_0px_#000000] transition-colors"
               >
                 <Share2 className="w-4 h-4" />
               </a>
@@ -183,8 +183,8 @@ export default function MobileInstructorsCarousel() {
               className="min-w-[32px] min-h-[44px] flex items-center justify-center"
             >
               <span
-                className={`h-2.5 rounded-full transition-all duration-300 border border-[#121020] ${
-                  activeIndex === idx ? "w-8 bg-[#FF1E82]" : "w-2.5 bg-gray-200 hover:bg-gray-300"
+                className={`h-2.5 rounded-full transition-all duration-300 border border-[#121020] dark:border-[#39364F] ${
+                  activeIndex === idx ? "w-8 bg-[#FF1E82] dark:bg-[#FF4D8D]" : "w-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
                 }`}
               />
             </button>
@@ -197,10 +197,10 @@ export default function MobileInstructorsCarousel() {
         {instructors.map((instructor, idx) => (
           <div
             key={idx}
-            className="flex flex-col items-center text-center bg-white rounded-[32px] p-6 border-2 border-[#121020] shadow-[5px_5px_0px_#121020] hover:shadow-[7px_7px_0px_#FF1E82] hover:-translate-y-2 transition-all duration-300 group"
+            className="flex flex-col items-center text-center bg-white dark:bg-[#211F35] rounded-[32px] p-6 border-2 border-[#121020] dark:border-[#39364F] shadow-[5px_5px_0px_#121020] dark:shadow-[5px_5px_0px_#000000] hover:shadow-[7px_7px_0px_#FF1E82] dark:hover:shadow-[7px_7px_0px_#FF4D8D] hover:-translate-y-2 transition-all duration-300 group"
           >
             <div
-              className="w-44 h-44 rounded-full overflow-hidden mb-4 border-3 border-[#121020] shadow-[3px_3px_0px_#121020] group-hover:scale-105 transition-transform duration-300 relative"
+              className="w-44 h-44 rounded-full overflow-hidden mb-4 border-3 border-[#121020] dark:border-[#39364F] shadow-[3px_3px_0px_#121020] dark:shadow-[3px_3px_0px_#000000] group-hover:scale-105 transition-transform duration-300 relative"
               style={{ backgroundColor: instructor.color }}
             >
               <div
@@ -208,9 +208,9 @@ export default function MobileInstructorsCarousel() {
                 style={{ backgroundImage: `url('${instructor.img}')` }}
               />
             </div>
-            <h3 className="text-xl font-black text-[#121020] tracking-tight mb-1">{instructor.name}</h3>
+            <h3 className="text-xl font-black text-[#121020] dark:text-white tracking-tight mb-1">{instructor.name}</h3>
             <span
-              className="text-xs font-black uppercase tracking-wider px-3.5 py-1 rounded-full border-2 border-[#121020] text-[#121020] mb-4 shadow-[2px_2px_0px_#121020]"
+              className="text-xs font-black uppercase tracking-wider px-3.5 py-1 rounded-full border-2 border-[#121020] dark:border-[#39364F] text-[#121020] dark:text-white mb-4 shadow-[2px_2px_0px_#121020] dark:shadow-[2px_2px_0px_#000000] dark:!bg-[#181729]"
               style={{ backgroundColor: instructor.bg }}
             >
               {instructor.role}
@@ -219,7 +219,7 @@ export default function MobileInstructorsCarousel() {
               <a
                 href="#"
                 aria-label={`Share ${instructor.name}'s profile`}
-                className="w-9 h-9 rounded-full bg-white border-2 border-[#121020] flex items-center justify-center text-[#121020] hover:bg-[#FFD200] shadow-[2px_2px_0px_#121020] transition-colors"
+                className="w-9 h-9 rounded-full bg-white dark:bg-[#181729] border-2 border-[#121020] dark:border-[#39364F] flex items-center justify-center text-[#121020] dark:text-white hover:bg-[#FFD200] dark:hover:bg-[#FFD84D] dark:hover:text-[#121020] shadow-[2px_2px_0px_#121020] dark:shadow-[2px_2px_0px_#000000] transition-colors"
               >
                 <Share2 className="w-4 h-4" />
               </a>

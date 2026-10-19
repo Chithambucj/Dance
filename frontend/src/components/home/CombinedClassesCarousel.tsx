@@ -258,8 +258,8 @@ export default function CombinedClassesCarousel() {
   return (
     <div className="w-full relative group">
       {/* Subtle edge fades for modern aesthetic polish */}
-      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-16 lg:w-24 bg-gradient-to-r from-[#FFFDF9] via-[#FFFDF9]/90 to-transparent z-10 hidden sm:block" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-16 lg:w-24 bg-gradient-to-l from-[#FFFDF9] via-[#FFFDF9]/90 to-transparent z-10 hidden sm:block" />
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-16 lg:w-24 bg-gradient-to-r from-[#FFFDF9] dark:from-[#11101D] via-[#FFFDF9]/90 dark:via-[#11101D]/90 to-transparent z-10 hidden sm:block" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-16 lg:w-24 bg-gradient-to-l from-[#FFFDF9] dark:from-[#11101D] via-[#FFFDF9]/90 dark:via-[#11101D]/90 to-transparent z-10 hidden sm:block" />
 
       {/* Infinite Continuous Scrolling Track */}
       <div
@@ -283,7 +283,7 @@ export default function CombinedClassesCarousel() {
           <Card
             key={`${cls.id}-${idx}`}
             data-loop-card
-            className="w-[82vw] max-w-[320px] sm:w-[320px] lg:w-[340px] shrink-0 rounded-[28px] overflow-hidden border-2 border-[#121020] shadow-[5px_5px_0px_#121020] hover:shadow-[7px_7px_0px_#FF1E82] hover:-translate-y-1.5 transition-all duration-300 bg-white flex flex-col justify-between group/card"
+            className="w-[82vw] max-w-[320px] sm:w-[320px] lg:w-[340px] shrink-0 rounded-[28px] overflow-hidden border-2 border-[#121020] dark:border-[#39364F] shadow-[5px_5px_0px_#121020] dark:shadow-[5px_5px_0px_#000000] hover:shadow-[7px_7px_0px_#FF1E82] dark:hover:shadow-[7px_7px_0px_#FF4D8D] hover:-translate-y-1.5 transition-all duration-300 bg-white dark:bg-[#211F35] flex flex-col justify-between group/card"
           >
             <div>
               {/* Vibrant Image Framing with Category Chip & Playful Tag */}
@@ -296,7 +296,7 @@ export default function CombinedClassesCarousel() {
                 
                 {/* Category Sticker */}
                 <div className="absolute bottom-3 left-3.5 z-10">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#121020] bg-[#FFD200] border-2 border-[#121020] px-3 py-1 rounded-full shadow-[2px_2px_0px_#121020]">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#121020] bg-[#FFD200] dark:bg-[#FFD84D] border-2 border-[#121020] dark:border-[#39364F] px-3 py-1 rounded-full shadow-[2px_2px_0px_#121020] dark:shadow-[2px_2px_0px_#000000]">
                     {cls.category}
                   </span>
                 </div>
@@ -304,7 +304,7 @@ export default function CombinedClassesCarousel() {
                 {/* Playful Tag Stamp */}
                 {cls.tag && (
                   <div className="absolute top-3 right-3 z-10">
-                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-[#FF1E82] border-2 border-[#121020] px-3 py-1 rounded-full shadow-[2px_2px_0px_#121020] inline-flex items-center gap-1 -rotate-2">
+                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-[#FF1E82] dark:bg-[#FF4D8D] border-2 border-[#121020] dark:border-[#39364F] px-3 py-1 rounded-full shadow-[2px_2px_0px_#121020] dark:shadow-[2px_2px_0px_#000000] inline-flex items-center gap-1 -rotate-2">
                       <Sparkles className="w-3 h-3" />
                       {cls.tag}
                     </span>
@@ -314,20 +314,20 @@ export default function CombinedClassesCarousel() {
 
               {/* Title & Desc */}
               <CardHeader className="pb-1 pt-5 px-5">
-                <CardTitle className="text-xl sm:text-2xl font-black text-[#121020] tracking-tight group-hover/card:text-[#FF1E82] transition-colors">
+                <CardTitle className="text-xl sm:text-2xl font-black text-[#121020] dark:text-white tracking-tight group-hover/card:text-[#FF1E82] dark:group-hover/card:text-[#FF4D8D] transition-colors">
                   {cls.name}
                 </CardTitle>
               </CardHeader>
 
               <CardContent className="px-5 pb-3">
-                <p className="text-xs sm:text-sm text-[#555263] min-h-[38px] sm:min-h-[42px] leading-relaxed line-clamp-2 mb-3 font-medium">
+                <p className="text-xs sm:text-sm text-[#555263] dark:text-[#C4C1D6] min-h-[38px] sm:min-h-[42px] leading-relaxed line-clamp-2 mb-3 font-medium">
                   {cls.desc}
                 </p>
                 
                 {/* Price Display */}
                 <div className="flex items-baseline gap-1.5 pt-1">
-                  <span className="text-2xl sm:text-3xl font-black text-[#121020] tracking-tight">₹{cls.price}</span>
-                  <span className="text-xs text-[#7B7788] font-bold uppercase">{cls.period}</span>
+                  <span className="text-2xl sm:text-3xl font-black text-[#121020] dark:text-white tracking-tight">₹{cls.price}</span>
+                  <span className="text-xs text-[#7B7788] dark:text-[#C4C1D6] font-bold uppercase">{cls.period}</span>
                 </div>
               </CardContent>
             </div>
@@ -337,7 +337,7 @@ export default function CombinedClassesCarousel() {
               <Link href="#contact" className="w-full">
                 <Button
                   variant="outline"
-                  className="w-full rounded-2xl border-2 border-[#121020] bg-[#FFF9D6] text-[#121020] hover:bg-[#FFD200] font-black text-xs sm:text-sm h-11 sm:h-12 flex items-center justify-center gap-2 shadow-[2px_2px_0px_#121020] active:translate-x-0.5 active:translate-y-0.5 transition-all group-hover/card:bg-[#FFD200]"
+                  className="w-full rounded-2xl border-2 border-[#121020] dark:border-[#39364F] bg-[#FFF9D6] dark:bg-[#181729] text-[#121020] dark:text-white hover:bg-[#FFD200] dark:hover:bg-[#FFD84D] dark:hover:text-[#121020] font-black text-xs sm:text-sm h-11 sm:h-12 flex items-center justify-center gap-2 shadow-[2px_2px_0px_#121020] dark:shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-all group-hover/card:bg-[#FFD200] dark:group-hover/card:bg-[#FFD84D] dark:group-hover/card:text-[#121020]"
                 >
                   View Details <ArrowRight className="w-4 h-4 group-hover/card:translate-x-1 transition-transform" />
                 </Button>
@@ -348,8 +348,8 @@ export default function CombinedClassesCarousel() {
       </div>
 
       {/* Interactive Helper Indicator */}
-      <div className="flex justify-center items-center gap-2 mt-4 text-xs font-bold text-[#868294]">
-        <span className="inline-block w-2 h-2 rounded-full bg-[#FF1E82] animate-ping" />
+      <div className="flex justify-center items-center gap-2 mt-4 text-xs font-bold text-[#868294] dark:text-[#C4C1D6]">
+        <span className="inline-block w-2 h-2 rounded-full bg-[#FF1E82] dark:bg-[#FF4D8D] animate-ping" />
         <span>Continuous marquee — drag or swipe freely to explore</span>
       </div>
     </div>
